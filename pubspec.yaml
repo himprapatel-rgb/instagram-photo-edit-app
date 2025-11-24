@@ -1,6 +1,5 @@
 name: instagram_photo_edit_app
-description: A professional mobile app for editing and enhancing Instagram photos with powerful filters, effects, and editing tools.
-version: 1.0.0+1
+description: A professional-grade Flutter photo editing app for Instagram with psychologically-optimized UI, gamification, AI features, and social media integration. Open source and cross-platform.version: 1.0.0+1
 publish_to: none
 
 environment:
