@@ -1,5 +1,6 @@
 name: instagram_photo_edit_app
-description: A professional-grade Flutter photo editing app for Instagram with psychologically-optimized UI, gamification, AI features, and social media integration. Open source and cross-platform.version: 1.0.0+1
+description: A professional-grade Flutter photo editing app for Instagram with psychologically-optimized UI, gamification, AI features, and social media integration. Open source and cross-platform.
+version: 1.0.0+1
 publish_to: none
 
 environment:
@@ -8,26 +9,26 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
+
   # UI & Design
   cupertino_icons: ^1.0.6
   google_fonts: ^6.1.0
-  
+
   # Image Processing
   image: ^4.1.0
-  
+
   # Permissions
   permission_handler: ^11.1.0
-  
+
   # File System
   path_provider: ^2.1.0
-  
+
   # Sharing
   share_plus: ^7.2.0
-  
+
   # Gamification & Persistence
   shared_preferences: ^2.2.2
-  
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -35,8 +36,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/
-  #   - icons/
