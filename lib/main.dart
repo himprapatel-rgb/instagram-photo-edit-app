@@ -48,77 +48,77 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String? _selectedImageUrl;
+  List<String> _selectedImageUrls = []; // Store multiple selected images
   bool _isUploading = false;
 
-  // Pick image from device
+  // Pick images from device
   Future<void> _pickImage() async {
     setState(() {
-  List<String> _selectedImageUrls = []; // Store multiple selected images    });
+      _isUploading = true;
+    });
 
     try {
       // Create file input element
-      final html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
+      final html.FileUploadInputElement uploadInput =
+          html.FileUploadInputElement();
       uploadInput.accept = 'image/*';
-            uploadInput.multiple = true; // Enable multiple file selection
+      uploadInput.multiple = true; // Enable multiple file selection
       uploadInput.click();
 
       uploadInput.onChange.listen((e) {
         final files = uploadInput.files;
         if (files != null && files.isNotEmpty) {
-            // Process ALL selected files
-            for (var file in files) {
-              // Validate file size (max 10MB)
-              const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-              if (file.size > maxSize) {
-                // Skip files that are too large
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Skipped ${file.name}: File too large! Max 10MB. Size: ${(file.size / (1024 * 1024)).toStringAsFixed(2)}MB'),
-                      backgroundColor: Colors.orange,
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
-                }
-                continue; // Skip this file and move to next
+          // Process ALL selected files
+          for (var file in files) {
+            // Validate file size (max 10MB)
+            const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+            if (file.size > maxSize) {
+              // Skip files that are too large
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                        'Skipped ${file.name}: File too large! Max 10MB. Size: ${(file.size / (1024 * 1024)).toStringAsFixed(2)}MB'),
+                    backgroundColor: Colors.orange,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
               }
+              continue; // Skip this file and move to next
+            }
 
-              // Read each file
-              final reader = html.FileReader();
-              
-              reader.onLoadEnd.listen((e) {
-                setState(() {
-                  _selectedImageUrls.add(reader.result as String);
-                });
+            // Read each file
+            final reader = html.FileReader();
+            reader.onLoadEnd.listen((e) {
+              setState(() {
+                _selectedImageUrls.add(reader.result as String);
               });
-
-              reader.readAsDataUrl(file);
-            }
-
-            // All files loaded
-            setState(() {
-              _isUploading = false;
             });
+            reader.readAsDataUrl(file);
+          }
 
-            // Show success message
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('✅ ${files.length} image(s) loaded successfully!'),
-                  backgroundColor: const Color(0xFF8B5CF6),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            }
+          // All files loaded
+          setState(() {
             _isUploading = false;
           });
+
+          // Show success message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('✅ ${files.length} image(s) loaded successfully!'),
+                backgroundColor: const Color(0xFF8B5CF6),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
         }
       });
     } catch (e) {
       setState(() {
         _isUploading = false;
       });
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -148,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (context) => AlertDialog(
                   title: const Text('About'),
                   content: const Text(
-                    'Professional photo editing app for Instagram.\n\nFeatures:\n\u2022 24 Professional Filters\n\u2022 Crop & Transform Tools\n\u2022 Instagram Aspect Ratios\n\u2022 AI-Powered Editing (Coming Soon)\n\u2022 Social Media Integration (Coming Soon)',
+                    'Professional photo editing app for Instagram.\n\nFeatures:\n• 24 Professional Filters\n• Crop & Transform Tools\n• Instagram Aspect Ratios\n• Multi-Image Batch Editing\n• AI-Powered Editing (Coming Soon)\n• Social Media Integration (Coming Soon)',
                   ),
                   actions: [
                     TextButton(
@@ -169,26 +169,84 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Image preview or placeholder
-              if (_selectedImageUrl != null)
-                Container(
-                  constraints: const BoxConstraints(maxHeight: 400),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF8B5CF6).withOpacity(0.3),
-                        blurRadius: 20,
-                        spreadRadius: 5,
+              if (_selectedImageUrls.isNotEmpty)
+                Column(
+                  children: [
+                    // Show image count
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${_selectedImageUrls.length} Image(s) Selected',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Display first image as preview
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 400),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.network(
+                          _selectedImageUrls.first,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                    // Show grid of thumbnails if multiple images
+                    if (_selectedImageUrls.length > 1) ..[
+                      const SizedBox(height: 16),
+                      Text(
+                        'All Selected Images:',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _selectedImageUrls.asMap().entries.map((entry) {
+                          return Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: const Color(0xFF8B5CF6),
+                                width: 2,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.network(
+                                entry.value,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.network(
-                      _selectedImageUrl!,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
+                  ],
                 )
               else
                 Container(
@@ -206,23 +264,32 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        Icons.photo_filter,
+                        Icons.photo_library,
                         size: 80,
                         color: Color(0xFF8B5CF6),
                       ),
                       SizedBox(height: 16),
                       Text(
-                        'No image selected',
+                        'No images selected',
                         style: TextStyle(
                           fontSize: 18,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Select multiple images',
+                        style: TextStyle(
+                          fontSize: 14,
                           color: Colors.grey,
                         ),
                       ),
                     ],
                   ),
                 ),
+
               const SizedBox(height: 48),
-              
+
               // Upload button
               if (_isUploading)
                 const CircularProgressIndicator(
@@ -231,33 +298,38 @@ class _HomeScreenState extends State<HomeScreen> {
               else
                 ElevatedButton.icon(
                   onPressed: _pickImage,
-                  icon: const Icon(Icons.upload_file, size: 24),
+                  icon: const Icon(Icons.add_photo_alternate, size: 24),
                   label: Text(
-                    _selectedImageUrl == null ? 'Upload Photo' : 'Change Photo',
+                    _selectedImageUrls.isEmpty
+                        ? 'Select Photos'
+                        : 'Add More Photos',
                     style: const TextStyle(fontSize: 18),
                   ),
                 ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Edit button (only show if image is selected)
-              if (_selectedImageUrl != null)
+              if (_selectedImageUrls.isNotEmpty)
                 OutlinedButton.icon(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Editor coming soon! \ud83d\ude80'),
-                        backgroundColor: Color(0xFF8B5CF6),
+                      SnackBar(
+                        content: Text(
+                            'Batch editor coming soon! Ready to edit ${_selectedImageUrls.length} image(s) 🚀'),
+                        backgroundColor: const Color(0xFF8B5CF6),
                       ),
                     );
                   },
                   icon: const Icon(Icons.edit, color: Color(0xFF8B5CF6)),
                   label: const Text(
-                    'Start Editing',
-                    style: TextStyle(fontSize: 18, color: Color(0xFF8B5CF6)),
+                    'Start Batch Editing',
+                    style:
+                        TextStyle(fontSize: 18, color: Color(0xFF8B5CF6)),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF8B5CF6), width: 2),
+                    side:
+                        const BorderSide(color: Color(0xFF8B5CF6), width: 2),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 32,
                       vertical: 16,
@@ -267,9 +339,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-              
+
               const SizedBox(height: 48),
-              
+
               // Features list
               const Text(
                 'Features:',
@@ -279,11 +351,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildFeatureItem('\ud83c\udfa8 24 Professional Filters'),
-              _buildFeatureItem('\u2702\ufe0f Crop & Transform Tools'),
-              _buildFeatureItem('\ud83d\udcf1 Instagram Aspect Ratios'),
-              _buildFeatureItem('\ud83e\udd16 AI-Powered Editing (Coming Soon)'),
-              _buildFeatureItem('\ud83d\ude80 Social Media Integration (Coming Soon)'),
+              _buildFeatureItem('🎨 24 Professional Filters'),
+              _buildFeatureItem('✂️ Crop & Transform Tools'),
+              _buildFeatureItem('📱 Instagram Aspect Ratios'),
+              _buildFeatureItem('📸 Multi-Image Batch Editing'),
+              _buildFeatureItem('🤖 AI-Powered Editing (Coming Soon)'),
+              _buildFeatureItem('🚀 Social Media Integration (Coming Soon)'),
             ],
           ),
         ),
