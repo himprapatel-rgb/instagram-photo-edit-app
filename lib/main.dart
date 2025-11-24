@@ -1,9 +1,10 @@
 /// Instagram Photo Editor - Main Entry Point
-/// Professional Flutter application with image upload and editing
+/// Professional Flutter application with image editing
 /// Author: Himanshu Prapatel
-
 import 'package:flutter/material.dart';
 import 'dart:html' as html;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 void main() {
   runApp(const InstagramPhotoEditorApp());
@@ -24,16 +25,6 @@ class InstagramPhotoEditorApp extends StatelessWidget {
           backgroundColor: Color(0xFF1E293B),
           elevation: 0,
         ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF8B5CF6),
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
       ),
       home: const HomeScreen(),
     );
@@ -48,46 +39,35 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<String> _selectedImageUrls = []; // Store multiple selected images
+  List<String> _selectedImageUrls = [];
   bool _isUploading = false;
 
-  // Pick images from device
   Future<void> _pickImage() async {
     setState(() {
       _isUploading = true;
     });
-
     try {
-      // Create file input element
       final html.FileUploadInputElement uploadInput =
           html.FileUploadInputElement();
       uploadInput.accept = 'image/*';
-      uploadInput.multiple = true; // Enable multiple file selection
+      uploadInput.multiple = true;
       uploadInput.click();
-
       uploadInput.onChange.listen((e) {
         final files = uploadInput.files;
         if (files != null && files.isNotEmpty) {
-          // Process ALL selected files
           for (var file in files) {
-            // Validate file size (max 10MB)
-            const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+            const maxSize = 10 * 1024 * 1024;
             if (file.size > maxSize) {
-              // Skip files that are too large
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(
-                        'Skipped ${file.name}: File too large! Max 10MB. Size: ${(file.size / (1024 * 1024)).toStringAsFixed(2)}MB'),
+                    content: Text('File too large: ${file.name}'),
                     backgroundColor: Colors.orange,
-                    duration: const Duration(seconds: 3),
                   ),
                 );
               }
-              continue; // Skip this file and move to next
+              continue;
             }
-
-            // Read each file
             final reader = html.FileReader();
             reader.onLoadEnd.listen((e) {
               setState(() {
@@ -96,19 +76,14 @@ class _HomeScreenState extends State<HomeScreen> {
             });
             reader.readAsDataUrl(file);
           }
-
-          // All files loaded
           setState(() {
             _isUploading = false;
           });
-
-          // Show success message
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('✅ ${files.length} image(s) loaded successfully!'),
+                content: Text('✅ ${files.length} image(s) loaded!'),
                 backgroundColor: const Color(0xFF8B5CF6),
-                duration: const Duration(seconds: 2),
               ),
             );
           }
@@ -118,13 +93,9 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _isUploading = false;
       });
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading image: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -134,33 +105,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Instagram Photo Editor',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Instagram Photo Editor', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('About'),
-                  content: const Text(
-                    'Professional photo editing app for Instagram.\n\nFeatures:\n• 24 Professional Filters\n• Crop & Transform Tools\n• Instagram Aspect Ratios\n• Multi-Image Batch Editing\n• AI-Powered Editing (Coming Soon)\n• Social Media Integration (Coming Soon)',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Close'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -168,11 +114,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Image preview or placeholder
               if (_selectedImageUrls.isNotEmpty)
                 Column(
                   children: [
-                    // Show image count
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
@@ -189,7 +133,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Display first image as preview
                     Container(
                       constraints: const BoxConstraints(maxHeight: 400),
                       decoration: BoxDecoration(
@@ -198,7 +141,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           BoxShadow(
                             color: const Color(0xFF8B5CF6).withOpacity(0.3),
                             blurRadius: 20,
-                            spreadRadius: 5,
                           ),
                         ],
                       ),
@@ -210,17 +152,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
-                    // Show grid of thumbnails if multiple images
-                    if (_selectedImageUrls.length > 1) ...[
+                    if (_selectedImageUrls.length > 1) ...[  
                       const SizedBox(height: 16),
-                      Text(
-                        'All Selected Images:',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -230,17 +163,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             height: 80,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: const Color(0xFF8B5CF6),
-                                width: 2,
-                              ),
+                              border: Border.all(color: const Color(0xFF8B5CF6), width: 2),
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(6),
-                              child: Image.network(
-                                entry.value,
-                                fit: BoxFit.cover,
-                              ),
+                              child: Image.network(entry.value, fit: BoxFit.cover),
                             ),
                           );
                         }).toList(),
@@ -255,106 +182,61 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF1E293B),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.3),
-                      width: 2,
-                    ),
+                    border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3), width: 2),
                   ),
                   child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.photo_library,
-                        size: 80,
-                        color: Color(0xFF8B5CF6),
-                      ),
+                      Icon(Icons.photo_library, size: 80, color: Color(0xFF8B5CF6)),
                       SizedBox(height: 16),
-                      Text(
-                        'No images selected',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Select multiple images',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                      ),
+                      Text('No images selected', style: TextStyle(fontSize: 18, color: Colors.grey)),
                     ],
                   ),
                 ),
-
               const SizedBox(height: 48),
-
-              // Upload button
               if (_isUploading)
-                const CircularProgressIndicator(
-                  color: Color(0xFF8B5CF6),
-                )
+                const CircularProgressIndicator(color: Color(0xFF8B5CF6))
               else
                 ElevatedButton.icon(
                   onPressed: _pickImage,
                   icon: const Icon(Icons.add_photo_alternate, size: 24),
                   label: Text(
-                    _selectedImageUrls.isEmpty
-                        ? 'Select Photos'
-                        : 'Add More Photos',
+                    _selectedImageUrls.isEmpty ? 'Select Photos' : 'Add More Photos',
                     style: const TextStyle(fontSize: 18),
                   ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8B5CF6),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
-
               const SizedBox(height: 16),
-
-              // Edit button (only show if image is selected)
               if (_selectedImageUrls.isNotEmpty)
                 OutlinedButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                            'Batch editor coming soon! Ready to edit ${_selectedImageUrls.length} image(s) 🚀'),
-                        backgroundColor: const Color(0xFF8B5CF6),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditorScreen(imageUrls: _selectedImageUrls),
                       ),
                     );
                   },
                   icon: const Icon(Icons.edit, color: Color(0xFF8B5CF6)),
-                  label: const Text(
-                    'Start Batch Editing',
-                    style:
-                        TextStyle(fontSize: 18, color: Color(0xFF8B5CF6)),
-                  ),
+                  label: const Text('Start Batch Editing', style: TextStyle(fontSize: 18, color: Color(0xFF8B5CF6))),
                   style: OutlinedButton.styleFrom(
-                    side:
-                        const BorderSide(color: Color(0xFF8B5CF6), width: 2),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    side: const BorderSide(color: Color(0xFF8B5CF6), width: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
-
               const SizedBox(height: 48),
-
-              // Features list
-              const Text(
-                'Features:',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              const Text('Features:', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               _buildFeatureItem('🎨 24 Professional Filters'),
               _buildFeatureItem('✂️ Crop & Transform Tools'),
               _buildFeatureItem('📱 Instagram Aspect Ratios'),
-              _buildFeatureItem('📸 Multi-Image Batch Editing'),
+              _buildFeatureItem('📸 Batch Image Editing'),
               _buildFeatureItem('🤖 AI-Powered Editing (Coming Soon)'),
               _buildFeatureItem('🚀 Social Media Integration (Coming Soon)'),
             ],
@@ -367,15 +249,118 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildFeatureItem(String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Text(text, style: const TextStyle(fontSize: 16, color: Colors.white70)),
+    );
+  }
+}
+
+class EditorScreen extends StatefulWidget {
+  final List<String> imageUrls;
+  const EditorScreen({required this.imageUrls, super.key});
+
+  @override
+  State<EditorScreen> createState() => _EditorScreenState();
+}
+
+class _EditorScreenState extends State<EditorScreen> {
+  late int _currentImageIndex;
+  late List<double> _brightness;
+  late List<double> _contrast;
+  late List<double> _saturation;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentImageIndex = 0;
+    _brightness = List.filled(widget.imageUrls.length, 1.0);
+    _contrast = List.filled(widget.imageUrls.length, 1.0);
+    _saturation = List.filled(widget.imageUrls.length, 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit Images'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Column(
         children: [
-          Text(
-            text,
-            style: const TextStyle(fontSize: 16, color: Colors.white70),
+          Expanded(
+            child: Center(
+              child: ColorFiltered(
+                colorFilter: ColorFilter.matrix(_getColorMatrix()),
+                child: Image.network(widget.imageUrls[_currentImageIndex]),
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: const Color(0xFF1E293B),
+            child: Column(
+              children: [
+                Text('Image ${_currentImageIndex + 1} of ${widget.imageUrls.length}',
+                    style: const TextStyle(color: Colors.white, fontSize: 14)),
+                const SizedBox(height: 12),
+                Slider(
+                  value: _brightness[_currentImageIndex],
+                  min: 0.5,
+                  max: 2.0,
+                  onChanged: (value) => setState(() => _brightness[_currentImageIndex] = value),
+                  label: 'Brightness: ${_brightness[_currentImageIndex].toStringAsFixed(2)}',
+                ),
+                Slider(
+                  value: _contrast[_currentImageIndex],
+                  min: 0.5,
+                  max: 2.0,
+                  onChanged: (value) => setState(() => _contrast[_currentImageIndex] = value),
+                  label: 'Contrast: ${_contrast[_currentImageIndex].toStringAsFixed(2)}',
+                ),
+                Slider(
+                  value: _saturation[_currentImageIndex],
+                  min: 0.0,
+                  max: 2.0,
+                  onChanged: (value) => setState(() => _saturation[_currentImageIndex] = value),
+                  label: 'Saturation: ${_saturation[_currentImageIndex].toStringAsFixed(2)}',
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    if (_currentImageIndex > 0)
+                      ElevatedButton(
+                        onPressed: () => setState(() => _currentImageIndex--),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)),
+                        child: const Text('Previous'),
+                      ),
+                    if (_currentImageIndex < widget.imageUrls.length - 1)
+                      ElevatedButton(
+                        onPressed: () => setState(() => _currentImageIndex++),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)),
+                        child: const Text('Next'),
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
+  }
+
+  List<double> _getColorMatrix() {
+    final b = _brightness[_currentImageIndex];
+    final c = _contrast[_currentImageIndex];
+    final s = _saturation[_currentImageIndex];
+    return [
+      c * s, 0, 0, 0, b,
+      0, c * s, 0, 0, b,
+      0, 0, c * s, 0, b,
+      0, 0, 0, 1, 0,
+    ];
   }
 }
