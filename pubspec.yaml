@@ -10,18 +10,21 @@ dependencies:
   flutter:
     sdk: flutter
   
+  # UI & Design
+  cupertino_icons: ^1.0.6
+  google_fonts: ^6.1.0
+  
   # Image Processing
   image: ^4.1.0
-  photofilters: ^2.0.0
-  image_picker: ^1.0.0
   
-  # Storage & Persistence
+  # Permissions
+  permission_handler: ^11.1.0
+  
+  # File System
   path_provider: ^2.1.0
-  shared_preferences: ^2.2.0
   
-  # UI & Design
-  flutter_svg: ^2.0.9
-  google_fonts: ^6.1.0
+  # Sharing
+  share_plus: ^7.2.0
   
 dev_dependencies:
   flutter_test:
@@ -31,8 +34,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   
-  # Assets (uncomment when adding assets)
+  # To add assets to your application, add an assets section, like this:
   # assets:
-  #   - assets/images/
-  #   - assets/icons/
-  #   - assets/fonts/
+  #   - images/
+  #   - icons/
