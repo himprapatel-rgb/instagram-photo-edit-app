@@ -333,9 +333,21 @@ class _EditorScreenState extends State<EditorScreen> with TickerProviderStateMix
     );
   }
 
-  void _applyFilter(String filterName) {
+  void _applyFilter(String filterName) { async
     if (_originalImage == null) return;
-    // Filter logic will be implemented
+        
+    // Load original image if not already loaded
+    if (_originalImage == null && _selectedImage != null) {
+      final bytes = await _selectedImage!.readAsBytes();
+      _originalImage = img.decodeImage(bytes);
+    }
+    
+    if (_originalImage == null) return;
+    
+    // Apply the selected filter
+    setState(() {
+      _editedImage = ImageEditorService.applyFilter(_originalImage!, filterName);
+    });
   }
 
   void _applyEffect(String effectName) {
