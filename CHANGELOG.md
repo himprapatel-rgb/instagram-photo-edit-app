@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Horizontal scrollable filter grid for easy navigation
 - Visual feedback with purple border on selected filter
 - Batch image editing with per-image filter retention
+- - **Image Download/Export** - Save edited photos locally with smart naming (photo_[index]_[filtername]_[timestamp].png)
 
 ### Planned Features
 - Daily streaks gamification system
