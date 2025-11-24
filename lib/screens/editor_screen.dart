@@ -6,8 +6,8 @@ import '../models/filter_model.dart';
 import '../services/image_editor_service.dart';
 
 class EditorScreen extends StatefulWidget {
-  const EditorScreen({Key? key}) : super(key: key);
-
+    final XFile imageFile;
+  const EditorScreen({Key? key, required this.imageFile}) : super(key: key);
   @override
   State<EditorScreen> createState() => _EditorScreenState();
 }
@@ -37,6 +37,7 @@ class _EditorScreenState extends State<EditorScreen> with TickerProviderStateMix
   @override
   void initState() {
     super.initState();
+        _selectedImage = File(widget.imageFile.path);
     _tabController = TabController(length: 4, vsync: this);
   }
 
