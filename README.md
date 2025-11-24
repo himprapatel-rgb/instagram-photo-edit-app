@@ -166,6 +166,7 @@ dependencies:
 - [x] Permission handling (Camera, Photos)
 - [x] Reusable UI components
 - [x] Project documentation
+- [ ] - [x] Image upload functionality with preview
 
 ### 🚧 In Progress
 
