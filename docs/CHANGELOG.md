@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Overall project progress corrected: 65% → 55%
   - Removed incorrect Phase 1 completion date
   - This demonstrates importance of accurate progress tracking
+  - - 🐛 **BUG FIX:** Gallery button now works correctly - fixed typo where `269()` was called instead of `_pickFromGallery()`
 
 ### Documentation  
 - ✅ Created comprehensive CHANGELOG.md with version history
