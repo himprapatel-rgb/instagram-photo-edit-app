@@ -30,7 +30,7 @@ A comprehensive mobile web app for editing and enhancing Instagram photos with p
 | Basic UI/UX | ✅ Done | 100% | Professional dark theme implemented |
 | Image Upload | ✅ Done | 100% | Single & multi-image support |
 | Image Preview | ✅ Done | 100% | Interactive preview system |
-| Basic Filters | ✅ Done | 100% | 23 premium Instagram filters |
+| Basic Filters | ✅ Done | 100% | 23 premium Instagram filters | Fixed: Image passing bug
 | Hosting Setup | ✅ Done | 100% | GitHub Pages live deployment |
 
 
