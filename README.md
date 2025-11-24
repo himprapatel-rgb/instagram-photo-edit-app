@@ -173,6 +173,7 @@ dependencies:
 - [ ] Complete editor screen UI
 - [ ] Filter algorithm implementation
 - [ ] Adjustment controls (brightness, contrast, etc.)
+- [ ] - [x] File size validation (10MB limit) and user feedback
 
 ### 📋 Planned
 
