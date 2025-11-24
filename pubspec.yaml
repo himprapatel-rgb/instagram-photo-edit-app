@@ -1,5 +1,5 @@
 name: instagram_photo_edit_app
-description: A mobile app for editing and enhancing Instagram photos with powerful filters, effects, and editing tools.
+description: A professional mobile app for editing and enhancing Instagram photos with powerful filters, effects, and editing tools.
 version: 1.0.0+1
 publish_to: none
 
@@ -9,12 +9,20 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  # Image Processing
   image: ^4.1.0
   photofilters: ^2.0.0
   image_picker: ^1.0.0
+  
+  # Storage & Persistence
   path_provider: ^2.1.0
   shared_preferences: ^2.2.0
-
+  
+  # UI & Design
+  flutter_svg: ^2.0.9
+  google_fonts: ^6.1.0
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -22,3 +30,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  
+  # Assets (uncomment when adding assets)
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
+  #   - assets/fonts/
