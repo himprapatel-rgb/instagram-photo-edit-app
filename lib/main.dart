@@ -106,8 +106,7 @@ class _EditorPageState extends State<EditorPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Edit Photo ${currentIndex + 1}')),
-    body: Column(
+    appBar: AppBar(title: Text('Edit Photo ${currentIndex + 1}')),    body: Column(
       children: [
         Expanded(
           child: Container(
