@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:html' as html;
-import 'dart:convert';
+import 'dart:ui' as ui;
 
 void main() => runApp(const MyApp());
 
@@ -85,7 +85,35 @@ class EditorPage extends StatefulWidget {
 class _EditorPageState extends State<EditorPage> {
   int currentIndex = 0;
   Map<int, String> selectedFilters = {};
-  List<String> filters = ['None','Clarendon','Gingham','Juno','Lark','Ludwig','Nashville','Perpetua','Reyes','Slumber','Toaster','Valencia','Walden','Willow','X-Pro II','Lo-Fi','Hudson','Inkwell','Amaro','Rise','Hefe','Sutro','Brannan','Earlybird'];
+  
+  final Map<String, ui.ColorFilter> filterMatrix = {
+    'None': ui.ColorFilter.linearToSrgbGamma(),
+    'Clarendon': ui.ColorFilter.srgbToLinearGamma(),
+    'Gingham': ui.ColorFilter.mode(Colors.cyan.withOpacity(0.1), BlendMode.lighten),
+    'Juno': ui.ColorFilter.mode(Colors.yellow.withOpacity(0.1), BlendMode.lighten),
+    'Lark': ui.ColorFilter.mode(Colors.blue.withOpacity(0.1), BlendMode.lighten),
+    'Ludwig': ui.ColorFilter.mode(Colors.white.withOpacity(0.2), BlendMode.darken),
+    'Nashville': ui.ColorFilter.mode(Colors.orange.withOpacity(0.15), BlendMode.lighten),
+    'Perpetua': ui.ColorFilter.mode(Colors.pink.withOpacity(0.1), BlendMode.lighten),
+    'Reyes': ui.ColorFilter.mode(Colors.yellow.withOpacity(0.05), BlendMode.lighten),
+    'Slumber': ui.ColorFilter.mode(Colors.purple.withOpacity(0.1), BlendMode.lighten),
+    'Toaster': ui.ColorFilter.mode(Colors.red.withOpacity(0.2), BlendMode.lighten),
+    'Valencia': ui.ColorFilter.mode(Colors.amber.withOpacity(0.15), BlendMode.lighten),
+    'Walden': ui.ColorFilter.mode(Colors.green.withOpacity(0.15), BlendMode.lighten),
+    'Willow': ui.ColorFilter.mode(Colors.teal.withOpacity(0.15), BlendMode.lighten),
+    'X-Pro II': ui.ColorFilter.mode(Colors.red.withOpacity(0.15), BlendMode.lighten),
+    'Lo-Fi': ui.ColorFilter.mode(Colors.brown.withOpacity(0.15), BlendMode.lighten),
+    'Hudson': ui.ColorFilter.mode(Colors.indigo.withOpacity(0.1), BlendMode.lighten),
+    'Inkwell': ui.ColorFilter.mode(Colors.grey.withOpacity(0.5), BlendMode.darken),
+    'Amaro': ui.ColorFilter.mode(Colors.amber.withOpacity(0.1), BlendMode.lighten),
+    'Rise': ui.ColorFilter.mode(Colors.yellow.withOpacity(0.08), BlendMode.lighten),
+    'Hefe': ui.ColorFilter.mode(Colors.orange.withOpacity(0.1), BlendMode.lighten),
+    'Sutro': ui.ColorFilter.mode(Colors.orange.withOpacity(0.12), BlendMode.lighten),
+    'Brannan': ui.ColorFilter.mode(Colors.red.withOpacity(0.12), BlendMode.lighten),
+    'Earlybird': ui.ColorFilter.mode(Colors.orange.withOpacity(0.15), BlendMode.lighten),
+  };
+
+  final List<String> filters = ['None','Clarendon','Gingham','Juno','Lark','Ludwig','Nashville','Perpetua','Reyes','Slumber','Toaster','Valencia','Walden','Willow','X-Pro II','Lo-Fi','Hudson','Inkwell','Amaro','Rise','Hefe','Sutro','Brannan','Earlybird'];
 
   @override
   void initState() {
@@ -105,62 +133,74 @@ class _EditorPageState extends State<EditorPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text('Edit Photo ${currentIndex + 1}')),    body: Column(
-      children: [
-        Expanded(
-          child: Container(
-            color: Colors.black,
-            child: Image.network(widget.imageUrls[currentIndex], fit: BoxFit.contain),
-          ),
-        ),
-        SizedBox(
-          height: 90,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: filters.length,
-            itemBuilder: (ctx, i) => GestureDetector(
-              onTap: () => selectFilter(filters[i]),
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                margin: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: selectedFilters[currentIndex] == filters[i] ? Colors.blue : Colors.grey,
-                    width: 2,
+  Widget build(BuildContext context) {
+    final currentFilter = selectedFilters[currentIndex] ?? 'None';
+    return Scaffold(
+      appBar: AppBar(title: Text('Edit Photo ${currentIndex + 1}')),
+      body: Column(
+        children: [
+          Expanded(
+            child: Container(
+              color: Colors.black,
+              child: Center(
+                child: ColorFiltered(
+                  colorFilter: filterMatrix[currentFilter] ?? ui.ColorFilter.linearToSrgbGamma(),
+                  child: Image.network(
+                    widget.imageUrls[currentIndex],
+                    fit: BoxFit.contain,
                   ),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Center(
-                  child: Text(filters[i], textAlign: TextAlign.center, style: const TextStyle(fontSize: 11)),
                 ),
               ),
             ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                onPressed: currentIndex > 0 ? () => setState(() => currentIndex--) : null,
-                child: const Text('Previous'),
+          SizedBox(
+            height: 90,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: filters.length,
+              itemBuilder: (ctx, i) => GestureDetector(
+                onTap: () => selectFilter(filters[i]),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  margin: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: currentFilter == filters[i] ? Colors.blue : Colors.grey,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Center(
+                    child: Text(filters[i], textAlign: TextAlign.center, style: const TextStyle(fontSize: 11)),
+                  ),
+                ),
               ),
-              ElevatedButton.icon(
-                onPressed: downloadImage,
-                icon: const Icon(Icons.download),
-                label: const Text('Download'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              ),
-              ElevatedButton(
-                onPressed: currentIndex < widget.imageUrls.length - 1 ? () => setState(() => currentIndex++) : null,
-                child: const Text('Next'),
-              ),
-            ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: currentIndex > 0 ? () => setState(() => currentIndex--) : null,
+                  child: const Text('Previous'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: downloadImage,
+                  icon: const Icon(Icons.download),
+                  label: const Text('Download'),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                ),
+                ElevatedButton(
+                  onPressed: currentIndex < widget.imageUrls.length - 1 ? () => setState(() => currentIndex++) : null,
+                  child: const Text('Next'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
