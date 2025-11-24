@@ -1,12 +1,127 @@
 # Development Workflow & Rules 🛠️
 
-## Critical Development Rule ⚠️
+## Critical Development Rules ⚠️
 
 **MANDATORY RULE: Documentation-First Development**
 
 > **Whenever you write or update code, you MUST update the documentation at the same time.**
 
 This is not optional. This is a core requirement for maintaining this professional open-source project.
+
+**MANDATORY RULE 2: Dependency-Aware Development**
+
+> **Whenever you write or update code, you MUST also update all dependent code to keep the flow working.**
+
+This is equally critical. Code changes cannot break existing functionality.
+
+### What This Means:
+
+1. **If you change a service method signature**, update all files that call it
+2. **If you add a new parameter**, update all usages
+3. **If you rename a class or function**, update all references
+4. **If you change a model structure**, update all consumers
+5. **If you modify an export**, update all imports
+
+### Example Scenarios:
+
+#### Scenario 1: Changing a Service Method
+```dart
+// OLD: FilterService method
+static Future<ui.Image?> applyFilter(ui.Image image, FilterType type)
+
+// NEW: Added intensity parameter
+static Future<ui.Image?> applyFilter(ui.Image image, FilterType type, {double intensity = 1.0})
+```
+
+**MUST UPDATE:**
+- ✅ All files calling `FilterService.applyFilter()` in screens/
+- ✅ All files calling it in widgets/
+- ✅ Add intensity parameter to all call sites
+- ✅ Update documentation showing new signature
+- ✅ Update CODE_STRUCTURE.md with new method signature
+
+#### Scenario 2: Adding a New Widget Property
+```dart
+// OLD: CustomButton
+CustomButton({required VoidCallback onPressed, required String text})
+
+// NEW: Added optional icon
+CustomButton({required VoidCallback onPressed, required String text, IconData? icon})
+```
+
+**MUST UPDATE:**
+- ✅ All existing CustomButton usages (they still work, but document the new option)
+- ✅ CODE_STRUCTURE.md to show new property
+- ✅ README.md if this changes button capabilities
+- ✅ Widget documentation inline
+
+#### Scenario 3: Refactoring File Structure
+```dart
+// OLD location
+import '../services/filter_service.dart';
+
+// NEW location (moved to subfolder)
+import '../services/filters/filter_service.dart';
+```
+
+**MUST UPDATE:**
+- ✅ ALL import statements across the entire codebase
+- ✅ Project structure in CODE_STRUCTURE.md
+- ✅ Any documentation referencing file paths
+- ✅ Test files importing this service
+
+### 🚨 Breaking Changes Checklist:
+
+Before committing ANY change that affects other code:
+
+- [ ] Did I search the entire codebase for usages of this code?
+- [ ] Did I update all call sites with new signatures?
+- [ ] Did I test that all dependent code still works?
+- [ ] Did I update imports if I moved/renamed files?
+- [ ] Did I update documentation to reflect changes?
+- [ ] Did I check widgets that use this service?
+- [ ] Did I check screens that use this widget?
+- [ ] Did I verify the app still compiles?
+- [ ] Did I run the app to ensure it works?
+
+**If ANY checkbox is unchecked, DO NOT COMMIT!**
+
+### ⚠️ Common Dependency Issues:
+
+1. **Changed method signature but forgot to update callers**
+   - Result: Compilation errors
+   - Fix: Search all files, update all usages
+
+2. **Renamed a file but forgot to update imports**
+   - Result: Import errors everywhere
+   - Fix: Global find-and-replace for import statements
+
+3. **Modified a model but forgot screens using it**
+   - Result: Runtime errors or incorrect data display
+   - Fix: Check all consumers of that model
+
+4. **Added required parameter without default value**
+   - Result: All existing usages break
+   - Fix: Make it optional or update all usages
+
+### 🔍 How to Find Dependencies:
+
+Use your IDE's features:
+```
+1. Right-click on class/method name
+2. Select "Find Usages" or "Find All References"
+3. IDE shows all files using this code
+4. Update each one systematically
+```
+
+Or use command-line tools:
+```bash
+# Find all files importing a service
+grep -r "import.*filter_service" lib/
+
+# Find all usages of a method
+grep -r "applyFilter" lib/
+```
 
 ---
 
