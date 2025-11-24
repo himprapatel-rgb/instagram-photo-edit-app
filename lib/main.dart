@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:html' as html;
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 void main() => runApp(const InstagramPhotoEditorApp());
 
@@ -17,15 +15,15 @@ class InstagramPhotoEditorApp extends StatelessWidget {
       );
 }
 
-class HomeScreen extends State<HomeScreen> {
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   List<String> _images = [];
   bool _uploading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _pickImages();
-  }
 
   Future<void> _pickImages() async {
     setState(() => _uploading = true);
@@ -34,27 +32,28 @@ class HomeScreen extends State<HomeScreen> {
     input.click();
     input.onChange.listen((e) {
       final files = input.files;
-      if (files!.isNotEmpty) {
+      if (files != null && files.isNotEmpty) {
+        int loaded = 0;
         for (var file in files) {
           final reader = html.FileReader();
           reader.readAsDataUrl(file);
           reader.onLoad.listen((e) {
-            setState(() {
-              _images.add(reader.result as String);
-              if (_images.length == files.length) {
-                _uploading = false;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EditorScreen(images: _images),
-                  ),
-                );
-              }
-            });
+            _images.add(reader.result as String);
+            loaded++;
+            if (loaded == files.length) {
+              setState(() => _uploading = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditorScreen(images: _images),
+                ),
+              );
+            }
           });
         }
+      } else {
+        setState(() => _uploading = false);
       }
-      setState(() => _uploading = false);
     });
   }
 
@@ -75,13 +74,9 @@ class HomeScreen extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(Icons.image, size: 80, color: Colors.purple),
-                  alignment: Alignment.center,
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'No images selected',
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
-                ),
+                const Text('No images selected', style: TextStyle(fontSize: 18, color: Colors.grey)),
                 const SizedBox(height: 48),
                 if (_uploading)
                   const CircularProgressIndicator(color: Color(0xFFE1306C))
@@ -93,7 +88,6 @@ class HomeScreen extends State<HomeScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.purple,
                       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                      textStyle: const TextStyle(fontSize: 16),
                     ),
                   ),
                 const SizedBox(height: 64),
@@ -103,8 +97,6 @@ class HomeScreen extends State<HomeScreen> {
                 const Text('✂️ Crop & Transform Tools'),
                 const Text('📐 Instagram Aspect Ratios'),
                 const Text('📷 Batch Image Editing'),
-                const Text('🤖 AI-Powered Editing (Coming Soon)'),
-                const Text('🔗 Social Media Integration (Coming Soon)'),
                 const Text('⬇️ Download Edited Images'),
               ],
             ),
@@ -123,40 +115,13 @@ class EditorScreen extends StatefulWidget {
 class _EditorScreenState extends State<EditorScreen> {
   late int _index;
   late List<String> _filters;
-  late Map<String, dynamic> _filterValues;
-
-  final List<Map<String, dynamic>> filters = [
-    {'name': 'None', 'matrix': [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]},
-    {'name': 'Clarendon', 'matrix': [1.2,0,0,0, 0,1.1,0,0, 0,0,1,0, 0,0,0,1]},
-    {'name': 'Gingham', 'matrix': [1,0,0,0, 0,1.05,0,0, 0,0,0.95,0, 0,0,0,1]},
-    {'name': 'Juno', 'matrix': [1.1,0,0,0, 0,1,0,0, 0,0,1.1,0, 0,0,0,1]},
-    {'name': 'Lark', 'matrix': [1,0,0,0, 0,1.1,0.05,0, 0,0.05,0.9,0, 0,0,0,1]},
-    {'name': 'Ludwig', 'matrix': [0.9,0,0,0, 0,1,0,0, 0,0,0.9,0, 0,0,0,1]},
-    {'name': 'Nashville', 'matrix': [1.2,0.1,0,0, 0,1.1,0,0, 0,0,1,0, 0,0,0,1]},
-    {'name': 'Perpetua', 'matrix': [1,0,0,0.1, 0,1,0.05,0, 0,0.05,0.9,0, 0,0,0,1]},
-    {'name': 'Reyes', 'matrix': [1.1,0,0,0, 0,1,0,0, 0,0,0.9,0, 0,0,0,1]},
-    {'name': 'Slumber', 'matrix': [1,0.05,0,0, 0,1,0,0, 0,0,0.95,0, 0,0,0,1]},
-    {'name': 'Toaster', 'matrix': [1.3,0.7,0,0, 0,1,0.2,0, 0.1,0.1,0.9,0, 0,0,0,1]},
-    {'name': 'Valencia', 'matrix': [1.08,0,0,0.08, 0,1.08,0,0, 0,0,1,0, 0,0,0,1]},
-    {'name': 'Walden', 'matrix': [1,0,0,0, 0,1.1,0,0, 0,0,1,0, 0.05,0,0,1]},
-    {'name': 'Willow', 'matrix': [0.8,0,0.1,0, 0,1,0,0, 0.1,0,0.8,0, 0,0,0,1]},
-    {'name': 'X-Pro II', 'matrix': [1.3,0.5,0.15,0.25, 0,1,0,0, 0,0,1.1,0, 0,0,0,1]},
-    {'name': 'Lo-Fi', 'matrix': [1.1,0.1,0,0.1, 0,0.9,0,0, 0,0,1.1,0, 0,0,0,1]},
-    {'name': 'Hudson', 'matrix': [1.2,0.1,0,0.1, 0,1.1,0,0, 0,0,1,0, 0,0,0,1]},
-    {'name': 'Inkwell', 'matrix': [0.3,0.3,0.3,0, 0.3,0.3,0.3,0, 0.3,0.3,0.3,0, 0,0,0,1]},
-    {'name': 'Amaro', 'matrix': [1.1,0,0,0, 0,1.1,0, 0,0,0,1,0, 0,0,0,1]},
-    {'name': 'Rise', 'matrix': [1,0.05,0.05,0.05, 0,1.05,0.05,0, 0.05,0.05,1,0, 0,0,0,1]},
-    {'name': 'Hefe', 'matrix': [1.1,0.1,0,0, 0,1,0,0, 0.05,0,0.9,0, 0,0,0,1]},
-    {'name': 'Sutro', 'matrix': [1,0.15,0.25,0, 0,1,0,0, 0,0,0.9,0, 0,0,0,1]},
-    {'name': 'Brannan', 'matrix': [1.3,0.2,0,0, 0,0.9,0,0, 0,0,0.9,0, 0,0,0,1]},
-    {'name': 'Earlybird', 'matrix': [1,0.1,0.1, 0.05, 0.05,0.8,0.05, 0, 0.1,0.15,0.8,0.1, 0,0,0,1]},
-  ];
+  late Map<String, String> _filterValues;
 
   @override
   void initState() {
     super.initState();
     _index = 0;
-    _filters = filters.map((f) => f['name'] as String).toList();
+    _filters = ['None', 'Clarendon', 'Gingham', 'Juno', 'Lark', 'Ludwig', 'Nashville', 'Perpetua', 'Reyes', 'Slumber', 'Toaster', 'Valencia', 'Walden', 'Willow', 'X-Pro II', 'Lo-Fi', 'Hudson', 'Inkwell', 'Amaro', 'Rise', 'Hefe', 'Sutro', 'Brannan', 'Earlybird'];
     _filterValues = {for (var img in widget.images) img: 'None'};
   }
 
@@ -166,12 +131,11 @@ class _EditorScreenState extends State<EditorScreen> {
     });
   }
 
-  void _downloadImage() async {
+  void _downloadImage() {
     final image = widget.images[_index];
     final filterName = _filterValues[image] ?? 'None';
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final filename = 'photo_${_index + 1}_${filterName.toLowerCase()}_$timestamp.png';
-    
     final link = html.AnchorElement(href: image)
       ..setAttribute('download', filename)
       ..click();
@@ -206,16 +170,14 @@ class _EditorScreenState extends State<EditorScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: _filterValues[widget.images[_index]] == _filters[i]
-                              ? Colors.purple
-                              : Colors.transparent,
+                          color: _filterValues[widget.images[_index]] == _filters[i] ? Colors.purple : Colors.transparent,
                           width: 3,
                         ),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding: const EdgeInsets.all(4),
+                      padding: const EdgeInsets.all(8),
                       child: Center(
-                        child: Text(_filters[i], textAlign: TextAlign.center),
+                        child: Text(_filters[i], textAlign: TextAlign.center, style: const TextStyle(fontSize: 12)),
                       ),
                     ),
                   ),
