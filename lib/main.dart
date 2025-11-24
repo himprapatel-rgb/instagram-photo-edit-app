@@ -66,47 +66,51 @@ class _HomeScreenState extends State<HomeScreen> {
       uploadInput.onChange.listen((e) {
         final files = uploadInput.files;
         if (files != null && files.isNotEmpty) {
-          final file = files[0];
-
-                        // Validate file size (max 10MB)
+            // Process ALL selected files
+            for (var file in files) {
+              // Validate file size (max 10MB)
               const maxSize = 10 * 1024 * 1024; // 10MB in bytes
               if (file.size > maxSize) {
-                setState(() {
-                  _isUploading = false;
-                });
+                // Skip files that are too large
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Image too large! Max size is 10MB. Your file: ${(file.size / (1024 * 1024)).toStringAsFixed(2)}MB'),
-                      backgroundColor: Colors.red,
-                      duration: const Duration(seconds: 4),
+                      content: Text('Skipped ${file.name}: File too large! Max 10MB. Size: ${(file.size / (1024 * 1024)).toStringAsFixed(2)}MB'),
+                      backgroundColor: Colors.orange,
+                      duration: const Duration(seconds: 3),
                     ),
                   );
                 }
-                return;
+                continue; // Skip this file and move to next
               }
-          final reader = html.FileReader();
 
-          reader.onLoadEnd.listen((e) {
+              // Read each file
+              final reader = html.FileReader();
+              
+              reader.onLoadEnd.listen((e) {
+                setState(() {
+                  _selectedImageUrls.add(reader.result as String);
+                });
+              });
+
+              reader.readAsDataUrl(file);
+            }
+
+            // All files loaded
             setState(() {
-              _selectedImageUrl = reader.result as String;
               _isUploading = false;
             });
 
             // Show success message
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                      content: Text('✅ Image loaded! Size: ${(file.size / (1024 * 1024)).toStringAsFixed(2)}MB'),                  backgroundColor: Color(0xFF8B5CF6),
-                  duration: Duration(seconds: 2),
+                SnackBar(
+                  content: Text('✅ ${files.length} image(s) loaded successfully!'),
+                  backgroundColor: const Color(0xFF8B5CF6),
+                  duration: const Duration(seconds: 2),
                 ),
               );
             }
-          });
-
-          reader.readAsDataUrl(file);
-        } else {
-          setState(() {
             _isUploading = false;
           });
         }
