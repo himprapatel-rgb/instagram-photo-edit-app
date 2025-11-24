@@ -151,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             gradient: LinearGradient(
               colors: [AppTheme.primaryColor.withOpacity(0.8), AppTheme.primaryColor],
             ),
-            onTap: () => _pickFromGallery(),
+            onTap: () => 269(),
           ),
           _buildActionCard(
             icon: Icons.camera_alt,
@@ -266,7 +266,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const EditorScreen(),
+          builder: (context) => EditorScreen(imageFile: pickedFile),
         ),
       );
     }
@@ -281,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const EditorScreen(),
+          builder: (context) => EditorScreen(imageFile: pickedFile),
         ),
       );
     }
