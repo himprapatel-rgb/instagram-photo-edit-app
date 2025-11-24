@@ -1,157 +1,227 @@
 # Instagram Photo Editor App 📸✨
 
-A professional-grade **Flutter** photo editing application inspired by VSCO, Snapseed, Adobe Lightroom, and Canva. Perfect for editing and enhancing Instagram photos with ease.
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+[![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue.svg)](https://flutter.dev/)
+[![Dart](https://img.shields.io/badge/Dart-3.0+-blue.svg)](https://dart.dev/)
 
-## 🎨 **Premium Features**
+A professional-grade **Flutter** photo editing application for Instagram photos. Built with open-source components and inspired by industry-leading apps like VSCO, Snapseed, Adobe Lightroom, and Canva.
 
-### **Filters** (23+ Premium Filters)
-- **Classic**: Original, Clarendon, Gingham
-- **Vintage**: Vintage, Lomo, Sepia  
-- **Cool Tones**: Cool, Inkwell, Walden
-- **Warm Tones**: Warm, Toaster, Valencia
-- **Bold & Vibrant**: Vivid, Juno, Lark
-- **Soft & Fade**: Fade, Amaro, Poprocket
-- **Dark & Moody**: Noir, Ashby, Hudson
-- **Professional**: Aden, Brannan, Brooklyn
+## ✨ Features
 
-### **Advanced Adjustments** (8+ Professional Controls)
-- ✅ Exposure Control (Professional-grade)
-- ✅ Brightness Adjustment
-- ✅ Contrast Enhancement
-- ✅ Shadow & Highlight Recovery
-- ✅ Saturation Control
-- ✅ Vibrance Enhancement (Like Snapseed)
-- ✅ Clarity Adjustments (Like Lightroom)
-- ✅ Color Temperature
+### 🎨 24 Professional Filters
 
-### **Creative Effects**
-- Grayscale / Black & White
-- Sepia Tone
-- Vintage Effect
-- Cool Temperature
-- Warm Temperature
-- Vivid Colors
-- Custom Effect Stacking
+Choose from a curated collection of Instagram-style filters:
 
-### **Professional Tools**
-- 🔄 **Crop & Rotate** - Free aspect ratio and preset ratios (Instagram, Square, etc.)
-- 🔁 **Flip & Mirror** - Horizontal and vertical flip
-- ➡️ **Straighten** - Auto-level horizon
-- 🌫️ **Blur Background** - Bokeh and background blur effects
-- 📝 **Add Text** - Custom fonts, sizes, colors, and positioning
-- 🖼️ **Borders & Frames** - Various border styles
+**Black & White**
+- None, Grayscale, Noir
 
-### **User Experience Features**
-- 👀 **Before/After Preview** - Side-by-side comparison (Like Snapseed)
-- ↩️ **Undo/Redo System** - Multiple undo steps
-- 💾 **Save Presets** - Quick-apply favorite edits
-- 📁 **History** - Track all edits made
-- 🎯 **Tabbed Navigation** - Easy access to Filters, Adjustments, Effects, Tools
-- 📤 **Direct Share to Instagram** - One-tap Instagram sharing
-- 🔄 **Aspect Ratio Presets** - Instagram, Square, Portrait, Landscape
+**Vintage**
+- Sepia, Vintage, Retro
 
-## 🛠️ **Tech Stack**
+**Cool Tones**
+- Cool, Arctic, Nordic
 
-- **Framework**: Flutter (Cross-platform: iOS & Android)
-- **Language**: Dart
-- **Image Processing**: `image` (Open-source pixel manipulation)
-- **Photography**: `photofilters` (Professional filter library)
-- **File Handling**: `image_picker`, `path_provider`
-- **Storage**: `shared_preferences` (Local preferences)
-- **UI**: Material Design 3 with custom Dark Mode
-- **License**: MIT (Fully Open-Source)
+**Warm Tones**  
+- Warm, Sunset, Golden Hour
 
-## 📂 **Project Structure**
+**Vivid**
+- Vivid, Pop, Chrome
 
-```
-lib/
-├── main.dart                          # App entry point
-├── screens/
-│   └── editor_screen.dart            # Main editor with tabbed UI
-├── services/
-│   └── image_editor_service.dart     # Image processing & filters
-├── models/
-│   └── filter_model.dart             # 23+ filter definitions
-└── widgets/                          # (Coming: Custom UI components)
-```
+**Muted**
+- Fade, Pastel, Muted
 
-## 🚀 **Getting Started**
+**Drama**
+- Drama, HDR, Silhouette
+
+**Special Effects**
+- Nashville, Clarendon, Gingham
+
+### 📐 Instagram Aspect Ratios
+
+Perfectly crop your photos for Instagram:
+- **Square** (1:1) - Classic Instagram posts
+- **Portrait** (4:5) - Vertical posts
+- **Landscape** (1.91:1) - Wide shots
+- **Story** (9:16) - Instagram Stories
+
+### 🛠️ Editing Tools
+
+- **Crop & Transform**: Rotate, flip horizontal/vertical
+- **Filters**: 24 professional preset filters
+- **Export**: Save to gallery or share directly
+- **Adjustments**: Brightness, contrast, saturation (coming soon)
+
+### 💾 Export Options
+
+- Save to device gallery
+- Share via system share dialog  
+- PNG and JPEG format support
+- Platform-specific optimization (Android/iOS/Web)
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Flutter SDK 3.0+
-- Dart 3.0+
+
+- Flutter SDK 3.0.0 or higher
+- Dart SDK 3.0.0 or higher
+- Android Studio / Xcode / VS Code
 
 ### Installation
 
+1. **Clone the repository**
+
 ```bash
-# Clone the repository
 git clone https://github.com/himprapatel-rgb/instagram-photo-edit-app.git
 cd instagram-photo-edit-app
+```
 
-# Get dependencies
+2. **Install dependencies**
+
+```bash
 flutter pub get
+```
 
-# Run the app
+3. **Run the app**
+
+```bash
 flutter run
 ```
 
-### Build APK/IPA
+### Platform-Specific Setup
 
-```bash
-# Android APK
-flutter build apk --release
+#### Android
 
-# iOS IPA
-flutter build ios --release
+Add permissions to `android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 ```
 
-## 💡 **Features Inspired By**
+#### iOS
 
-| Feature | Inspired By |
-|---------|------------|
-| Tabbed Navigation | VSCO, Adobe Lightroom |
-| Advanced Adjustments | Adobe Lightroom, Snapseed |
-| 23+ Filters | VSCO, Instagram |
-| Before/After Preview | Snapseed, Afterlight |
-| Text Overlay | Canva, Pixlr |
-| Aspect Ratios | Instagram, SnapSeed |
-| Undo/Redo System | Professional Design Apps |
-| Share to Instagram | Native Integration |
+Add permissions to `ios/Runner/Info.plist`:
 
-## 🎯 **Coming Soon**
+```xml
+<key>NSCameraUsageDescription</key>
+<string>We need camera access to take photos</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>We need photo library access to edit your photos</string>
+```
 
-- ✨ Advanced Curve Adjustments
-- 🎨 Color Grading Tools
-- 📐 Perspective & Distortion
-- 🌈 HSL (Hue, Saturation, Lightness) Fine-tuning
-- 💬 Captions & Watermarks  
-- 🖼️ Layout & Collage Maker
-- 📤 Cloud Backup & Sync
-- 🔒 User Accounts & Profile
-- 🎬 Batch Processing
-- 📱 Share to Multiple Platforms
+## 📁 Project Structure
 
-## 🤝 **Contributing**
+```
+lib/
+├── core/
+│   ├── constants/     # App constants and configuration
+│   └── theme/         # Material Design 3 theming
+├── models/            # Data models
+├── screens/           # UI screens (Home, Gallery, Editor)
+├── services/          # Business logic
+│   ├── filter_service.dart
+│   ├── export_service.dart
+│   ├── permission_service.dart
+│   └── image_editor_service.dart
+├── utils/             # Utility functions
+│   └── crop_utility.dart
+└── widgets/           # Reusable UI components
+    ├── custom_button.dart
+    ├── loading_widget.dart
+    └── filter_preview_card.dart
+```
 
-We welcome contributions! Feel free to:
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## 🔧 Tech Stack
 
-## 📄 **License**
+- **Framework**: Flutter 3.0+
+- **Language**: Dart 3.0+
+- **Design**: Material Design 3
+- **State Management**: Built-in Flutter state management
+- **Architecture**: Service-based architecture
+- **Dependencies**: Open-source packages only
+
+### Key Dependencies
+
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  image: ^4.1.0                    # Image processing
+  permission_handler: ^11.1.0      # Permission management
+  path_provider: ^2.1.0            # File system access
+  share_plus: ^7.2.0               # Sharing functionality
+  google_fonts: ^6.1.0             # Typography
+```
+
+## 🎯 Roadmap
+
+### ✅ Completed
+
+- [x] Material Design 3 theming
+- [x] 24 professional filters
+- [x] Instagram aspect ratio support
+- [x] Image crop and transform utilities
+- [x] Export and share functionality
+- [x] Permission handling (Camera, Photos)
+- [x] Reusable UI components
+- [x] Project documentation
+
+### 🚧 In Progress
+
+- [ ] Complete editor screen UI
+- [ ] Filter algorithm implementation
+- [ ] Adjustment controls (brightness, contrast, etc.)
+
+### 📋 Planned
+
+- [ ] Undo/Redo functionality
+- [ ] Text overlay tool
+- [ ] Sticker support
+- [ ] Blur effects
+- [ ] Unit and widget tests
+- [ ] CI/CD pipeline
+- [ ] Localization (i18n)
+
+## 🤝 Contributing
+
+Contributions are always welcome! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+### Ways to Contribute
+
+- 🐛 Report bugs
+- 💡 Suggest new features  
+- 🔧 Submit pull requests
+- 📖 Improve documentation
+- ⭐ Star this repository
+
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👨‍💻 **Author**
+## 🙏 Acknowledgments
 
-**Himpratel RGB** - [GitHub](https://github.com/himprapatel-rgb)
+- Inspired by VSCO, Snapseed, Adobe Lightroom, and Canva
+- Built with open-source Flutter and Dart
+- Material Design 3 guidelines
+- Flutter community packages
 
-## 🌟 **Show Your Support**
+## 📱 Screenshots
 
-Give a ⭐ if you like this project! It helps us grow and improve.
+*Coming soon - Screenshots of the app in action*
+
+## 💬 Support
+
+If you have any questions or need help, please:
+
+- Open an [issue](https://github.com/himprapatel-rgb/instagram-photo-edit-app/issues)
+- Start a [discussion](https://github.com/himprapatel-rgb/instagram-photo-edit-app/discussions)
+- Check existing documentation
+
+## 🌟 Star History
+
+If you find this project useful, please consider giving it a star! ⭐
 
 ---
 
-**Made with ❤️ for Instagram Photo Enthusiasts**
+**Made with ❤️ and Flutter** | [Report Bug](https://github.com/himprapatel-rgb/instagram-photo-edit-app/issues) | [Request Feature](https://github.com/himprapatel-rgb/instagram-photo-edit-app/issues)
