@@ -471,4 +471,154 @@ Before merging PR:
 
 ---
 
+---
+
+## ⚠️ 📊 MANDATORY: Progress Tracking Rule
+
+### 🔴 CRITICAL WORKFLOW REQUIREMENT
+
+**Every code change, feature addition, or bug fix MUST be accompanied by updates to both:**
+
+1. **PROGRESS_TRACKER.md**
+2. **CHANGELOG.md**
+
+This is not optional - it's a required part of every commit.
+
+### 📝 What to Update
+
+#### After Feature Completion:
+```markdown
+PROGRESS_TRACKER.md:
+- Change feature status from 🔄 In Progress to ✅ Done
+- Update phase progress percentage
+- Update overall project progress
+- Update "Last Updated" date
+- Mark relevant milestones
+
+CHANGELOG.md:
+- Add entry under [Unreleased] > Added/Changed
+- Include feature description and completion date
+- Link to related issues/PRs if applicable
+```
+
+#### During Development (WIP):
+```markdown
+PROGRESS_TRACKER.md:
+- Update progress percentage (e.g., 30% → 50%)
+- Add notes about current work status
+- Update target dates if timeline changes
+- Add any new blockers discovered
+
+CHANGELOG.md:
+- Add brief note under [Unreleased] about work in progress
+- Can be consolidated when feature completes
+```
+
+#### For Bug Fixes:
+```markdown
+PROGRESS_TRACKER.md:
+- Remove from "Known Issues & Blockers" section
+- Update affected phase if bug was blocking progress
+- Note resolution in relevant feature section
+
+CHANGELOG.md:
+- Add entry under [Unreleased] > Fixed
+- Describe the bug and the fix
+- Reference issue number
+```
+
+#### For Documentation Updates:
+```markdown
+PROGRESS_TRACKER.md:
+- Update "Documentation Status" table
+- Update doc progress percentage
+- Update "Last Updated" date
+
+CHANGELOG.md:
+- Add entry under [Unreleased] > Documentation
+- List what docs were added/updated
+```
+
+### ✅ Example Commit Workflow
+
+```bash
+# Step 1: Make your code changes
+vim lib/features/gamification/xp_bar.dart
+
+# Step 2: Update progress tracker
+vim docs/PROGRESS_TRACKER.md
+# - Update Phase 3 Gamification UI: 40% → 60%
+# - Mark "XP bar in header" as done
+# - Update overall progress: 65% → 67%
+
+# Step 3: Update changelog
+vim docs/CHANGELOG.md
+# Add under [Unreleased] > Added:
+# - XP bar widget in app header showing current level
+
+# Step 4: Stage all changes together
+git add lib/features/gamification/xp_bar.dart
+git add docs/PROGRESS_TRACKER.md
+git add docs/CHANGELOG.md
+
+# Step 5: Commit with descriptive message
+git commit -m "feat: Add XP bar to app header
+
+- Implemented XP bar widget with level display
+- Shows current XP and progress to next level
+- Responsive design for mobile and desktop
+- Updated progress tracker (Phase 3: 60% complete)
+- Updated changelog with feature details"
+
+# Step 6: Push changes
+git push origin main
+```
+
+### ❌ What NOT to Do
+
+```bash
+# ❌ BAD: Code change without progress updates
+git add lib/features/new_feature.dart
+git commit -m "add feature"
+git push
+# Result: INCOMPLETE - Missing progress tracking!
+
+# ❌ BAD: Updating only one tracking document
+git add lib/features/new_feature.dart
+git add docs/PROGRESS_TRACKER.md
+git commit -m "add feature and update tracker"
+git push
+# Result: INCOMPLETE - Missing CHANGELOG.md update!
+
+# ❌ BAD: Vague or missing commit messages
+git commit -m "update stuff"
+# Result: Poor documentation, can't track what changed
+```
+
+### 🚨 Enforcement
+
+Commits that don't follow this rule are considered **INCOMPLETE** and should be:
+1. Amended to include progress tracking updates
+2. Or reverted and redone properly
+
+### 🎯 Benefits
+
+- **Transparency:** Always know exact project status
+- **Accountability:** Clear record of what's done and what's pending
+- **Planning:** Accurate data for timeline estimates
+- **Communication:** Stakeholders can see progress anytime
+- **Historical Record:** Complete audit trail of all changes
+
+### 📚 Quick Links
+
+- [PROGRESS_TRACKER.md](./PROGRESS_TRACKER.md) - Current project status
+- [CHANGELOG.md](./CHANGELOG.md) - Detailed change history
+- [Development Workflow](./DEVELOPMENT_WORKFLOW.md) - This document
+
+---
+
+**Remember:** No code change is complete without updating both tracking documents!
+
+---
+
 **Remember: Good documentation and clean code are not optional—they are essential for professional, maintainable, and scalable applications.**
