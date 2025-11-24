@@ -151,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             gradient: LinearGradient(
               colors: [AppTheme.primaryColor.withOpacity(0.8), AppTheme.primaryColor],
             ),
-            onTap: () => 269(),
+            onTap: () => _pickFromGallery(),
           ),
           _buildActionCard(
             icon: Icons.camera_alt,
