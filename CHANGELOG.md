@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+### Added
+
+- **24 Professional Instagram Filters** - Instant click-to-apply filters including Clarendon, Gingham, Juno, Lark, Ludwig, Nashville, Perpetua, Reyes, Slumber, Toaster, Valencia, Walden, Willow, X-Pro II, Lo-Fi, Hudson, Inkwell, Amaro, Rise, Hefe, Sutro, Brannan, Earlybird
+- Horizontal scrollable filter grid for easy navigation
+- Visual feedback with purple border on selected filter
+- Batch image editing with per-image filter retention
+
 ### Planned Features
 - Daily streaks gamification system
 - Achievement badges and XP rewards
