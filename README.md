@@ -219,6 +219,7 @@ For detailed documentation, visit the [docs/](./docs/) folder:
 - [Contributing Guidelines](./CONTRIBUTING.md)
 - [API Documentation](./docs/API.md)
 - [Deployment Guide](./docs/DEPLOYMENT.md)
+- - [Progress Tracker](./docs/PROGRESS_TRACKER.md)
 
 ---
 
