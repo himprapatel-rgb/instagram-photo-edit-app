@@ -67,6 +67,24 @@ class _HomeScreenState extends State<HomeScreen> {
         final files = uploadInput.files;
         if (files != null && files.isNotEmpty) {
           final file = files[0];
+
+                        // Validate file size (max 10MB)
+              const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+              if (file.size > maxSize) {
+                setState(() {
+                  _isUploading = false;
+                });
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Image too large! Max size is 10MB. Your file: ${(file.size / (1024 * 1024)).toStringAsFixed(2)}MB'),
+                      backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                }
+                return;
+              }
           final reader = html.FileReader();
 
           reader.onLoadEnd.listen((e) {
@@ -79,8 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Image loaded successfully! \u2705'),
-                  backgroundColor: Color(0xFF8B5CF6),
+                      content: Text('✅ Image loaded! Size: ${(file.size / (1024 * 1024)).toStringAsFixed(2)}MB'),                  backgroundColor: Color(0xFF8B5CF6),
                   duration: Duration(seconds: 2),
                 ),
               );
