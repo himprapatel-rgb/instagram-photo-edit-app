@@ -54,13 +54,13 @@ class _HomeScreenState extends State<HomeScreen> {
   // Pick image from device
   Future<void> _pickImage() async {
     setState(() {
-      _isUploading = true;
-    });
+  List<String> _selectedImageUrls = []; // Store multiple selected images    });
 
     try {
       // Create file input element
       final html.FileUploadInputElement uploadInput = html.FileUploadInputElement();
       uploadInput.accept = 'image/*';
+            uploadInput.multiple = true; // Enable multiple file selection
       uploadInput.click();
 
       uploadInput.onChange.listen((e) {
