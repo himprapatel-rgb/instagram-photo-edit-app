@@ -42,7 +42,8 @@ jobs:
       
       # Upload artifact
       - name: Upload artifact
-      uses: actions/upload-pages-artifact@v3        with:
+      uses: actions/upload-pages-artifact@v3
+            with:
           path: ./build/web
   
   deploy:
