@@ -211,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     // Show grid of thumbnails if multiple images
-                    if (_selectedImageUrls.length > 1) ..[
+                    if (_selectedImageUrls.length > 1) ...[
                       const SizedBox(height: 16),
                       Text(
                         'All Selected Images:',
