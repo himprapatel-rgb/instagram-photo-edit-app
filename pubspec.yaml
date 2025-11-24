@@ -25,6 +25,9 @@ dependencies:
   # Sharing
   share_plus: ^7.2.0
   
+  # Gamification & Persistence
+  shared_preferences: ^2.2.2
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
