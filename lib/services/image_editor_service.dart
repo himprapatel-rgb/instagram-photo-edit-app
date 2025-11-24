@@ -107,4 +107,116 @@ class ImageEditorService {
     }
     return result;
   }
+
+    /// Apply Instagram-style filters
+  static img.Image applyFilter(img.Image image, String filterName) {
+    switch (filterName.toLowerCase()) {
+      case 'original':
+        return img.Image.from(image);
+      case 'clarendon':
+        var result = adjustSaturation(image, 1.3);
+        result = adjustContrast(result, 1.2);
+        return adjustBrightness(result, 1.1);
+      case 'gingham':
+        var result = adjustBrightness(image, 1.05);
+        return adjustSaturation(result, 0.8);
+      case 'vintage':
+        var result = sepia(image);
+        return adjustContrast(result, 0.9);
+      case 'lomo':
+        var result = adjustContrast(image, 1.5);
+        return adjustSaturation(result, 1.2);
+      case 'sepia':
+        return sepia(image);
+      case 'cool':
+        return _applyCoolTone(image);
+      case 'inkwell':
+        return grayscale(image);
+      case 'walden':
+        var result = adjustBrightness(image, 1.1);
+        return adjustSaturation(result, 1.3);
+      case 'warm':
+        return _applyWarmTone(image);
+      case 'toaster':
+        var result = adjustContrast(image, 1.2);
+        result = adjustBrightness(result, 1.1);
+        return _applyWarmTone(result);
+      case 'valencia':
+        var result = adjustBrightness(image, 1.08);
+        result = adjustContrast(result, 1.08);
+        return _applyWarmTone(result);
+      case 'vivid':
+        return adjustSaturation(image, 1.5);
+      case 'juno':
+        var result = adjustSaturation(image, 1.4);
+        return adjustContrast(result, 1.2);
+      case 'lark':
+        var result = adjustBrightness(image, 1.1);
+        result = adjustContrast(result, 0.9);
+        return adjustSaturation(result, 1.2);
+      case 'fade':
+        var result = adjustBrightness(image, 1.1);
+        return adjustSaturation(result, 0.7);
+      case 'amaro':
+        var result = adjustBrightness(image, 1.1);
+        result = adjustContrast(result, 0.9);
+        return adjustSaturation(result, 0.85);
+      case 'poprocket':
+        var result = adjustSaturation(image, 1.2);
+        return adjustContrast(result, 1.1);
+      case 'noir':
+        var result = grayscale(image);
+        return adjustContrast(result, 1.3);
+      case 'ashby':
+        var result = grayscale(image);
+        result = adjustContrast(result, 1.2);
+        return _applyCoolTone(result);
+      case 'hudson':
+        var result = adjustBrightness(image, 1.2);
+        result = adjustContrast(result, 0.9);
+        return _applyCoolTone(result);
+      case 'aden':
+        var result = adjustBrightness(image, 1.2);
+        result = adjustSaturation(result, 0.85);
+        return _applyCoolTone(result);
+      case 'brannan':
+        var result = adjustContrast(image, 1.4);
+        return sepia(result);
+      case 'brooklyn':
+        var result = adjustBrightness(image, 1.1);
+        result = adjustContrast(result, 0.9);
+        return _applyWarmTone(result);
+      default:
+        return img.Image.from(image);
+    }
+  }
+
+  /// Apply cool blue tone
+  static img.Image _applyCoolTone(img.Image image) {
+    final result = img.Image.from(image);
+    for (int i = 0; i < result.length; i++) {
+      final pixel = result[i];
+      final r = (img.getRed(pixel) * 0.9).clamp(0, 255).toInt();
+      final g = img.getGreen(pixel);
+      final b = (img.getBlue(pixel) * 1.1).clamp(0, 255).toInt();
+      final a = img.getAlpha(pixel);
+      result[i] = img.getColor(r, g, b, a);
+    }
+    return result;
+  }
+
+  /// Apply warm orange tone
+  static img.Image _applyWarmTone(img.Image image) {
+    final result = img.Image.from(image);
+    for (int i = 0; i < result.length; i++) {
+      final pixel = result[i];
+      final r = (img.getRed(pixel) * 1.1).clamp(0, 255).toInt();
+      final g = (img.getGreen(pixel) * 1.05).clamp(0, 255).toInt();
+      final b = (img.getBlue(pixel) * 0.9).clamp(0, 255).toInt();
+      final a = img.getAlpha(pixel);
+      result[i] = img.getColor(r, g, b, a);
+    }
+    return result;
+  }
+}
 }
