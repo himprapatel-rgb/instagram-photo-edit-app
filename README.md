@@ -44,6 +44,16 @@ Perfectly crop your photos for Instagram:
 - **Landscape** (1.91:1) - Wide shots
 - **Story** (9:16) - Instagram Stories
 
+## 📸 Multi-Image Batch Processing
+
+Select and edit multiple images simultaneously:
+- **Multiple Selection**: Choose multiple photos at once from your device
+- **Batch Preview**: View all selected images in a thumbnail grid
+- **Image Counter**: See how many images are currently loaded
+- **File Validation**: Automatic 10MB size limit per image with skip for oversized files
+- **Add More**: Ability to add additional images to your current selection
+- **Batch Editing**: Apply the same edits to all selected images (coming soon)
+
 ### 🛠️ Editing Tools
 
 - **Crop & Transform**: Rotate, flip horizontal/vertical
