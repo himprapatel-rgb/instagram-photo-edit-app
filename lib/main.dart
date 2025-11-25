@@ -174,12 +174,14 @@ class _EditorPageState extends State<EditorPage> {
     super.initState();
     for (int i = 0; i < widget.imageUrls.length; i++) {
       selectedFilters[i] = 'None';
-      filterIntensity[i] = 1.0; // Full intensity by default
+      filterIntensity[i] = 1.0;
     }
   }
 
-  void selectFilter(String filter) =>
-      setState(() => selectedFilters[currentIndex] = filter);
+  void selectFilter(String filter) {
+    setState(() => selectedFilters[currentIndex] = filter);
+    Navigator.pop(context);
+  }
 
   void updateIntensity(double intensity) =>
       setState(() => filterIntensity[currentIndex] = intensity);
@@ -195,10 +197,72 @@ class _EditorPageState extends State<EditorPage> {
       ..click();
   }
 
+  void showFilterModal() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Select Filter'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+            ),
+            itemCount: filters.length,
+            itemBuilder: (ctx, i) => GestureDetector(
+              onTap: () => selectFilter(filters[i]),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: selectedFilters[currentIndex] == filters[i]
+                        ? Colors.blue
+                        : Colors.grey,
+                    width:
+                        selectedFilters[currentIndex] == filters[i] ? 3 : 1,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        color: Colors.blue.withOpacity(0.3),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      filters[i],
+                      style: const TextStyle(fontSize: 10),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentFilter = selectedFilters[currentIndex] ?? 'None';
     final currentIntensity = filterIntensity[currentIndex] ?? 1.0;
+
     return Scaffold(
       appBar: AppBar(title: Text('Edit Photo ${currentIndex + 1}')),
       body: Column(
@@ -234,45 +298,19 @@ class _EditorPageState extends State<EditorPage> {
                         min: 0.0,
                         max: 1.0,
                         divisions: 100,
-                        label: '${(currentIntensity * 100).toStringAsFixed(0)}%',
+                        label:
+                            '${(currentIntensity * 100).toStringAsFixed(0)}%',
                         onChanged: updateIntensity,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
               ],
             ),
           ),
-          SizedBox(
-            height: 90,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: filters.length,
-              itemBuilder: (ctx, i) => GestureDetector(
-                onTap: () => selectFilter(filters[i]),
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  margin: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color:
-                          currentFilter == filters[i] ? Colors.blue : Colors.grey,
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Center(
-                    child: Text(filters[i],
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 11)),
-                  ),
-                ),
-              ),
-            ),
-          ),
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -283,11 +321,20 @@ class _EditorPageState extends State<EditorPage> {
                   child: const Text('Previous'),
                 ),
                 ElevatedButton.icon(
+                  onPressed: showFilterModal,
+                  icon: const Icon(Icons.filter_vintage),
+                  label: const Text('Filters'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                  ),
+                ),
+                ElevatedButton.icon(
                   onPressed: downloadImage,
                   icon: const Icon(Icons.download),
                   label: const Text('Download'),
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green),
+                    backgroundColor: Colors.green,
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: currentIndex < widget.imageUrls.length - 1
