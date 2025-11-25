@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - 2025-11-25
+
+### Added
+- **Filters Button**: New expandable button that reveals all Instagram-style filters when clicked
+- **Custom Edit Button**: New expandable button for manual adjustments including:
+  - Brightness control (0-2)
+  - Contrast control (0-2)
+  - Saturation control (0-2)
+  - Exposure control (-2 to 2)
+  - Shadows control (-1 to 1)
+  - Highlights control (-1 to 1)
+  - Warmth control (-1 to 1)
+  - Sharpness control (0-2)
+
+### Changed
+- Reorganized editor UI with two main action buttons (Filters and Custom Edit)
+- Filters and Custom Edit panels are mutually exclusive for cleaner UX
+- Improved slider design with compact layout
+
 ## [Unreleased]
 
 ### Added
