@@ -99,6 +99,9 @@ class _EditorPageState extends State<EditorPage> {
     'Clarendon': ui.ColorFilter.srgbToLinearGamma(),
     'Gingham':
         ui.ColorFilter.mode(Colors.cyan.withOpacity(0.1), BlendMode.lighten),
+      Map<int, double> brightness = {};
+  Map<int, double> contrast = {};
+  Map<int, double> saturation = {};
     'Juno':
         ui.ColorFilter.mode(Colors.yellow.withOpacity(0.1), BlendMode.lighten),
     'Lark':
@@ -176,6 +179,9 @@ class _EditorPageState extends State<EditorPage> {
     for (int i = 0; i < widget.imageUrls.length; i++) {
       selectedFilters[i] = 'None';
       filterIntensity[i] = 1.0;
+            brightness[i] = 0.0;
+      contrast[i] = 1.0;
+      saturation[i] = 1.0;
     }
   }
 
