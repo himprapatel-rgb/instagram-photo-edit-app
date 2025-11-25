@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:html' as html;
 import 'dart:ui' as ui;
+// v0.5.0 - Instagram UI Enhancement
 
 void main() => runApp(const MyApp());
 
