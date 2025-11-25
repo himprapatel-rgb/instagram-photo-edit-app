@@ -251,13 +251,24 @@ class _EditorPageState extends State<EditorPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(4),
-                            color: Colors.blue.withOpacity(0.3),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: SizedBox(
+                            width: 60,
+                            height: 60,
+                            child: ColorFiltered(
+                              colorFilter: filterMatrix[filters[i]] ?? ui.ColorFilter.linearToSrgbGamma(),
+                              child: Image.network(
+                                widget.imageUrls[currentIndex],
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: Colors.grey[800],
+                                  child: const Icon(Icons.image, color: Colors.white54, size: 24),
+                                ),
+                              ),
+                            ),
                           ),
+                        ),
                         ),
                         const SizedBox(height: 4),
                         Text(
