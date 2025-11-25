@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Visual feedback with purple border on selected filter
 - Batch image editing with per-image filter retention
 - - **Image Download/Export** - Save edited photos locally with smart naming (photo_[index]_[filtername]_[timestamp].png)
+  - - **Filter Intensity Slider** - Adjustable filter strength (0-100%) with real-time preview and percentage display
 
 ### Planned Features
 - Daily streaks gamification system
