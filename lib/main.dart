@@ -29,6 +29,7 @@ class _HomePageState extends State<HomePage> {
     input.accept = 'image/*';
     input.multiple = true;
     input.click();
+
     input.onChange.listen((e) {
       final files = input.files;
       if (files != null && files.isNotEmpty) {
@@ -180,7 +181,6 @@ class _EditorPageState extends State<EditorPage> {
 
   void selectFilter(String filter) {
     setState(() => selectedFilters[currentIndex] = filter);
-    Navigator.pop(context);
   }
 
   void updateIntensity(double intensity) =>
@@ -198,62 +198,82 @@ class _EditorPageState extends State<EditorPage> {
   }
 
   void showFilterModal() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Select Filter'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) => Container(
+        height: MediaQuery.of(context).size.height * 0.45,
+        decoration: const BoxDecoration(
+          color: Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Select Filter',
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close)),
+                ],
+              ),
             ),
-            itemCount: filters.length,
-            itemBuilder: (ctx, i) => GestureDetector(
-              onTap: () => selectFilter(filters[i]),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: selectedFilters[currentIndex] == filters[i]
-                        ? Colors.blue
-                        : Colors.grey,
-                    width:
-                        selectedFilters[currentIndex] == filters[i] ? 3 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(4),
-                        color: Colors.blue.withOpacity(0.3),
+                itemCount: filters.length,
+                itemBuilder: (ctx, i) => GestureDetector(
+                  onTap: () {
+                    selectFilter(filters[i]);
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: selectedFilters[currentIndex] == filters[i]
+                            ? Colors.blue
+                            : Colors.grey,
+                        width:
+                            selectedFilters[currentIndex] == filters[i] ? 3 : 1,
                       ),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      filters[i],
-                      style: const TextStyle(fontSize: 10),
-                      textAlign: TextAlign.center,
-                      overflow: TextOverflow.ellipsis,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            color: Colors.blue.withOpacity(0.3),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          filters[i],
+                          style: const TextStyle(fontSize: 10),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
       ),
     );
   }
