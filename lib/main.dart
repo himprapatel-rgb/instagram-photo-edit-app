@@ -203,6 +203,18 @@ class _EditorPageState extends State<EditorPage> {
       ..click();
   }
 
+    // Helper method to apply brightness adjustment
+  ui.ColorFilter _getAdjustmentFilter() {
+    final b = brightness[currentIndex] ?? 0.0;
+    final c = contrast[currentIndex] ?? 1.0;
+    final s = saturation[currentIndex] ?? 1.0;
+    
+    // Simplified approach: Use matrix for combined adjustments
+    // Note: Full ColorMatrix implementation requires more complex calculations
+    // For now, returning a simple filter that will be enhanced
+    return ui.ColorFilter.linearToSrgbGamma();
+  }
+
   void showFilterModal() {
     showModalBottomSheet(
       context: context,
