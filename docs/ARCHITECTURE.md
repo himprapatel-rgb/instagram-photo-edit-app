@@ -179,6 +179,48 @@ class GamificationProvider extends ChangeNotifier {
   int _currentStreak = 0;
   int _totalXP = 0;
   int _level = 1;
+  int _level = 1;
+}
+
+// Image Adjustment State (v0.4.0)
+class EditorPageState extends State<EditorPage> {
+  Map<int, double> brightness = {};  // -100 to +100
+  Map<int, double> contrast = {};    // 0.5x to 2.0x
+  Map<int, double> saturation = {};  // 0 to 2.0x
+  
+  void initState() {
+    super.initState();
+    for (int i = 0; i < widget.imageUrls.length; i++) {
+      brightness[i] = 0.0;    // Neutral
+      contrast[i] = 1.0;      // Neutral
+      saturation[i] = 1.0;    // Neutral
+    }
+  }
+  
+  void updateAdjustment(String type, double value) {
+    setState(() {
+      switch (type) {
+        case 'brightness':
+          brightness[currentIndex] = value;
+          break;
+        case 'contrast':
+          contrast[currentIndex] = value;
+          break;
+        case 'saturation':
+          saturation[currentIndex] = value;
+          break;
+      }
+    });
+  }
+  
+  void resetAdjustments() {
+    setState(() {
+      brightness[currentIndex] = 0.0;
+      contrast[currentIndex] = 1.0;
+      saturation[currentIndex] = 1.0;
+    });
+  }
+
   
   void incrementEditCount() { ... }
   void checkDailyStreak() { ... }
@@ -396,6 +438,118 @@ When adding new features:
 - [Material Design 3](https://m3.material.io/)
 - [Dart Style Guide](https://dart.dev/guides/language/effective-dart/style)
 
+
+---
+
+## v0.4.0 Architecture Updates (November 25, 2025)
+
+### Modal Bottom Sheet Architecture
+
+**Filter Modal (`showFilterModal`)**
+- **Component Type:** `showModalBottomSheet`
+- **Height:** 45% of screen height
+- **Background:** Dark theme (#1E1E1E) with rounded top corners (20px)
+- **Layout:**
+  - Header: Title + Close button
+  - Body: 4-column GridView with filter thumbnails
+  - Thumbnails: 60x60px with rounded corners (8px)
+  - Live Preview: ColorFiltered images showing actual filter effect
+
+**Adjustment Modal (`showAdjustModal`)**
+- **Component Type:** `showModalBottomSheet`
+- **Height:** 50% of screen height
+- **Layout:**
+  - Header: "Adjust Image" title + Close button
+  - ScrollView with 3 adjustment sliders:
+    - Brightness: -100 to +100 (step: 0.5)
+    - Contrast: 0.5x to 2.0x (step: 0.01)
+    - Saturation: 0 to 2.0x (step: 0.01)
+  - Reset button: Restore defaults
+  - Real-time value display above each slider
+
+### State Management Pattern
+
+```dart
+// Per-image state tracking
+Map<int, double> brightness = {};   // Keyed by image index
+Map<int, String> selectedFilters = {};
+Map<int, double> filterIntensity = {};
+
+// Initialize for all images
+void initState() {
+  for (int i = 0; i < imageUrls.length; i++) {
+    brightness[i] = 0.0;
+    // ... other initializations
+  }
+}
+
+// Update on slider change
+void updateBrightness(double value) {
+  setState(() {
+    brightness[currentIndex] = value;
+  });
+}
+```
+
+### UI/UX Design Decisions
+
+**1. Persistent Modal Pattern**
+- Modals stay open during editing
+- Users can see changes in real-time
+- No need to reopen dialog after each change
+- Improved workflow efficiency
+
+**2. Visual Feedback**
+- Live filter previews on thumbnails
+- Real-time value display while adjusting
+- Selected filter highlighted with blue border (3px)
+- Smooth animations on state changes
+
+**3. Error Handling**
+- Fallback icons for failed image loads
+- Grey placeholder containers
+- Graceful degradation
+
+### Performance Considerations
+
+**Image Rendering:**
+- Thumbnails cached after first render
+- ColorFiltered applied dynamically
+- BoxFit.cover for optimal scaling
+- 60fps target for slider interactions
+
+**State Updates:**
+- Minimal setState() calls
+- Only update current image index
+- Map-based state for O(1) lookups
+- Debounced slider updates (implicit via Flutter)
+
+### Future Architecture Plans
+
+**ColorMatrix Implementation:**
+```dart
+ui.ColorFilter _getAdjustmentFilter() {
+  // Current: Placeholder
+  // Future: Full matrix transformation
+  // Combine brightness, contrast, saturation
+  // Apply via ColorFiltered widget
+  return ui.ColorFilter.matrix([
+    contrast, 0, 0, 0, brightness,
+    0, contrast, 0, 0, brightness,
+    0, 0, contrast, 0, brightness,
+    0, 0, 0, 1, 0
+  ]);
+}
+```
+
+**Planned Enhancements:**
+- CSS filters for Flutter Web (dart:html integration)
+- Shader-based effects for native platforms
+- Image processing library integration
+- Real-time visual adjustment preview
+- Undo/redo system integration
+
+---
 ---
 
 **Last Updated:** November 24, 2025  
