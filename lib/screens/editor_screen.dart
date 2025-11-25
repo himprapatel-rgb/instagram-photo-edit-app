@@ -6,7 +6,7 @@ import '../models/filter_model.dart';
 import '../services/image_editor_service.dart';
 
 class EditorScreen extends StatefulWidget {
-    final XFile imageFile;
+  final XFile imageFile;
   const EditorScreen({Key? key, required this.imageFile}) : super(key: key);
   @override
   State<EditorScreen> createState() => _EditorScreenState();
@@ -17,6 +17,8 @@ class _EditorScreenState extends State<EditorScreen> with TickerProviderStateMix
   img.Image? _originalImage;
   img.Image? _editedImage;
   String? _selectedFilter;
+  
+  // Adjustment values
   double _brightness = 1.0;
   double _contrast = 1.0;
   double _saturation = 1.0;
@@ -25,33 +27,33 @@ class _EditorScreenState extends State<EditorScreen> with TickerProviderStateMix
   double _highlights = 0.0;
   double _vibrance = 0.0;
   double _clarity = 0.0;
+  double _warmth = 0.0;
+  double _sharpness = 0.0;
+  
+  // UI State
+  bool _showFilters = false;
+  bool _showCustomEdit = false;
   bool _showBeforeAfter = false;
-  int _currentTabIndex = 0;
-  final List<String> _editHistory = [];
-  final List<String> _redoHistory = [];
-
+  
   final ImagePicker _imagePicker = ImagePicker();
   final ImageEditorService _editorService = ImageEditorService();
-  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-        _selectedImage = File(widget.imageFile.path);
-    _tabController = TabController(length: 4, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+    _selectedImage = File(widget.imageFile.path);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Instagram Photo Editor'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text('Edit Photo'),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.black,
@@ -67,31 +69,14 @@ class _EditorScreenState extends State<EditorScreen> with TickerProviderStateMix
       ),
       body: Column(
         children: [
-          // Image preview
+          // Image preview area
           Expanded(
+            flex: 3,
             child: Container(
               color: Colors.grey[900],
               child: _selectedImage != null
-                  ? Stack(
-                      children: [
-                        // Before/After toggle
-                        if (_showBeforeAfter && _editedImage != null)
-                          Center(
-                            child: Container(
-                              color: Colors.black87,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text('BEFORE', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white)),
-                                  const SizedBox(height: 20),
-                                  Image.file(_selectedImage!, fit: BoxFit.contain),
-                                ],
-                              ),
-                            ),
-                          )
-                        else
-                          Image.file(_selectedImage!, fit: BoxFit.cover),
-                      ],
+                  ? Center(
+                      child: Image.file(_selectedImage!, fit: BoxFit.contain),
                     )
                   : Center(
                       child: Column(
@@ -106,239 +91,251 @@ class _EditorScreenState extends State<EditorScreen> with TickerProviderStateMix
                     ),
             ),
           ),
-          // Tab navigation
+          
+          // Expandable Filters Section
+          if (_showFilters)
+            Container(
+              height: 120,
+              color: Colors.black,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Select Filter', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                          onPressed: () => setState(() => _showFilters = false),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: FilterModel.premiumFilters.length,
+                      itemBuilder: (context, index) {
+                        final filter = FilterModel.premiumFilters[index];
+                        final isSelected = _selectedFilter == filter.name;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() => _selectedFilter = filter.name);
+                            _applyFilter(filter.name);
+                          },
+                          child: Container(
+                            width: 70,
+                            margin: const EdgeInsets.only(right: 8),
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: isSelected ? Colors.blue : Colors.grey[700]!,
+                                      width: isSelected ? 3 : 1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: filter.color,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  filter.name,
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.blue : Colors.white,
+                                    fontSize: 10,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          
+          // Expandable Custom Edit Section
+          if (_showCustomEdit)
+            Container(
+              height: 200,
+              color: Colors.black,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Custom Edit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                          onPressed: () => setState(() => _showCustomEdit = false),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      children: [
+                        _buildCompactSlider('Brightness', _brightness, 0, 2, (v) => setState(() => _brightness = v)),
+                        _buildCompactSlider('Contrast', _contrast, 0, 2, (v) => setState(() => _contrast = v)),
+                        _buildCompactSlider('Saturation', _saturation, 0, 2, (v) => setState(() => _saturation = v)),
+                        _buildCompactSlider('Exposure', _exposure, -2, 2, (v) => setState(() => _exposure = v)),
+                        _buildCompactSlider('Shadows', _shadows, -1, 1, (v) => setState(() => _shadows = v)),
+                        _buildCompactSlider('Highlights', _highlights, -1, 1, (v) => setState(() => _highlights = v)),
+                        _buildCompactSlider('Warmth', _warmth, -1, 1, (v) => setState(() => _warmth = v)),
+                        _buildCompactSlider('Sharpness', _sharpness, 0, 2, (v) => setState(() => _sharpness = v)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          
+          // Main Action Buttons (Filters & Custom Edit)
           Container(
-            color: Colors.black87,
-            child: TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(icon: Icon(Icons.palette), text: 'Filters'),
-                Tab(icon: Icon(Icons.tune), text: 'Adjust'),
-                Tab(icon: Icon(Icons.star), text: 'Effects'),
-                Tab(icon: Icon(Icons.build), text: 'Tools'),
+            color: Colors.black,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            child: Row(
+              children: [
+                // Filters Button
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _showFilters = !_showFilters;
+                        if (_showFilters) _showCustomEdit = false;
+                      });
+                    },
+                    icon: Icon(_showFilters ? Icons.expand_less : Icons.filter_vintage),
+                    label: const Text('Filters'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _showFilters ? Colors.blue : Colors.grey[800],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Custom Edit Button
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _showCustomEdit = !_showCustomEdit;
+                        if (_showCustomEdit) _showFilters = false;
+                      });
+                    },
+                    icon: Icon(_showCustomEdit ? Icons.expand_less : Icons.tune),
+                    label: const Text('Custom Edit'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _showCustomEdit ? Colors.blue : Colors.grey[800],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
               ],
-              labelColor: Colors.blue,
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: Colors.blue,
             ),
           ),
-          // Tab content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
+          
+          // Bottom Action Bar (Download, Previous, Next)
+          Container(
+            color: Colors.black,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildFiltersTab(),
-                _buildAdjustmentsTab(),
-                _buildEffectsTab(),
-                _buildToolsTab(),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text('Previous', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _saveImage,
+                  icon: const Icon(Icons.download),
+                  label: const Text('Download'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text('Next', style: TextStyle(color: Colors.grey)),
+                ),
               ],
             ),
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        color: Colors.black,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: [
-            ElevatedButton.icon(
-              onPressed: _pickImageFromGallery,
-              icon: const Icon(Icons.photo_library),
-              label: const Text('Gallery'),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton.icon(
-              onPressed: _pickImageFromCamera,
-              icon: const Icon(Icons.camera_alt),
-              label: const Text('Camera'),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-            ),
-            const Spacer(),
-            ElevatedButton(
-              onPressed: _reset,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[700]),
-              child: const Text('Reset'),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: _selectedImage != null ? _saveImage : null,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _buildFiltersTab() {
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (var filter in FilterModel.premiumFilters)
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() => _selectedFilter = filter.name);
-                      _applyFilter(filter.name);
-                    },
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: _selectedFilter == filter.name ? Colors.blue : Colors.grey,
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: filter.color,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(filter.name, style: const TextStyle(fontSize: 12, color: Colors.white)),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
+  Widget _buildCompactSlider(String label, double value, double min, double max, ValueChanged<double> onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAdjustmentsTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildSliderWithValue('Exposure', _exposure, -2, 2, (value) {
-          setState(() => _exposure = value);
-        }),
-        _buildSliderWithValue('Brightness', _brightness, 0, 2, (value) {
-          setState(() => _brightness = value);
-        }),
-        _buildSliderWithValue('Contrast', _contrast, 0, 2, (value) {
-          setState(() => _contrast = value);
-        }),
-        _buildSliderWithValue('Shadows', _shadows, -1, 1, (value) {
-          setState(() => _shadows = value);
-        }),
-        _buildSliderWithValue('Highlights', _highlights, -1, 1, (value) {
-          setState(() => _highlights = value);
-        }),
-        _buildSliderWithValue('Saturation', _saturation, 0, 2, (value) {
-          setState(() => _saturation = value);
-        }),
-        _buildSliderWithValue('Vibrance', _vibrance, -1, 1, (value) {
-          setState(() => _vibrance = value);
-        }),
-        _buildSliderWithValue('Clarity', _clarity, -1, 1, (value) {
-          setState(() => _clarity = value);
-        }),
-      ],
-    );
-  }
-
-  Widget _buildEffectsTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildEffectButton('Grayscale', () => _applyEffect('grayscale')),
-        _buildEffectButton('Sepia', () => _applyEffect('sepia')),
-        _buildEffectButton('Vintage', () => _applyEffect('vintage')),
-        _buildEffectButton('Cool', () => _applyEffect('cool')),
-        _buildEffectButton('Warm', () => _applyEffect('warm')),
-        _buildEffectButton('Vivid', () => _applyEffect('vivid')),
-      ],
-    );
-  }
-
-  Widget _buildToolsTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildToolButton('Crop', Icons.crop, () {}),
-        _buildToolButton('Rotate', Icons.rotate_right, () {}),
-        _buildToolButton('Flip', Icons.flip, () {}),
-        _buildToolButton('Straighten', Icons.straighten, () {}),
-        _buildToolButton('Blur Background', Icons.blur_on, () {}),
-        _buildToolButton('Add Text', Icons.text_fields, () {}),
-      ],
-    );
-  }
-
-  Widget _buildSliderWithValue(String label, double value, double min, double max,
-      ValueChanged<double> onChanged) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            Text('${value.toStringAsFixed(2)}', style: const TextStyle(color: Colors.blue)),
-          ],
-        ),
-        Slider(
-          value: value,
-          min: min,
-          max: max,
-          onChanged: onChanged,
-          activeColor: Colors.blue,
-          inactiveColor: Colors.grey[800],
-        ),
-        const SizedBox(height: 12),
-      ],
-    );
-  }
-
-  Widget _buildEffectButton(String label, VoidCallback onTap) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.grey[800],
-          padding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-        child: Text(label, style: const TextStyle(fontSize: 16)),
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 2,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+              ),
+              child: Slider(
+                value: value,
+                min: min,
+                max: max,
+                onChanged: onChanged,
+                activeColor: Colors.blue,
+                inactiveColor: Colors.grey[700],
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 40,
+            child: Text(
+              value.toStringAsFixed(1),
+              style: const TextStyle(color: Colors.blue, fontSize: 12),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildToolButton(String label, IconData icon, VoidCallback onTap) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: ElevatedButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon),
-        label: Text(label),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.grey[800],
-          padding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-      ),
-    );
-  }
-
-  void _applyFilter(String filterName) { async
-    if (_originalImage == null) return;
-        
+  void _applyFilter(String filterName) async {
+    if (_selectedImage == null) return;
+    
     // Load original image if not already loaded
-    if (_originalImage == null && _selectedImage != null) {
+    if (_originalImage == null) {
       final bytes = await _selectedImage!.readAsBytes();
       _originalImage = img.decodeImage(bytes);
     }
@@ -351,31 +348,6 @@ class _EditorScreenState extends State<EditorScreen> with TickerProviderStateMix
     });
   }
 
-  void _applyEffect(String effectName) {
-    if (_selectedImage == null) return;
-    // Effect logic will be implemented
-  }
-
-  Future<void> _pickImageFromGallery() async {
-    final pickedFile = await _imagePicker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-        _reset();
-      });
-    }
-  }
-
-  Future<void> _pickImageFromCamera() async {
-    final pickedFile = await _imagePicker.pickImage(source: ImageSource.camera);
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-        _reset();
-      });
-    }
-  }
-
   void _reset() {
     setState(() {
       _brightness = 1.0;
@@ -386,6 +358,8 @@ class _EditorScreenState extends State<EditorScreen> with TickerProviderStateMix
       _highlights = 0.0;
       _vibrance = 0.0;
       _clarity = 0.0;
+      _warmth = 0.0;
+      _sharpness = 0.0;
       _selectedFilter = null;
       _showBeforeAfter = false;
     });
@@ -394,7 +368,10 @@ class _EditorScreenState extends State<EditorScreen> with TickerProviderStateMix
   Future<void> _saveImage() async {
     if (_selectedImage == null) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Image saved to gallery!')),
+      const SnackBar(
+        content: Text('Image saved to gallery!'),
+        backgroundColor: Colors.green,
+      ),
     );
   }
 }
