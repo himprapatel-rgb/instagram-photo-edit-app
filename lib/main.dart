@@ -295,6 +295,98 @@ class _EditorPageState extends State<EditorPage> {
     );
   }
 
+    void showAdjustModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) => Container(
+        height: MediaQuery.of(context).size.height * 0.5,
+        decoration: const BoxDecoration(
+          color: Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Adjust Image',
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close)),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    // Brightness Slider
+                    Text('Brightness: ${brightness[currentIndex]?.toStringAsFixed(0) ?? "0"}'),
+                    Slider(
+                      value: brightness[currentIndex] ?? 0.0,
+                      min: -100,
+                      max: 100,
+                      divisions: 200,
+                      label: brightness[currentIndex]?.toStringAsFixed(0),
+                      onChanged: (value) => setState(() => brightness[currentIndex] = value),
+                    ),
+                    const SizedBox(height: 24),
+                    // Contrast Slider
+                    Text('Contrast: ${contrast[currentIndex]?.toStringAsFixed(2) ?? "1.00"}x'),
+                    Slider(
+                      value: contrast[currentIndex] ?? 1.0,
+                      min: 0.5,
+                      max: 2.0,
+                      divisions: 150,
+                      label: '${contrast[currentIndex]?.toStringAsFixed(2)}x',
+                      onChanged: (value) => setState(() => contrast[currentIndex] = value),
+                    ),
+                    const SizedBox(height: 24),
+                    // Saturation Slider
+                    Text('Saturation: ${saturation[currentIndex]?.toStringAsFixed(2) ?? "1.00"}x'),
+                    Slider(
+                      value: saturation[currentIndex] ?? 1.0,
+                      min: 0.0,
+                      max: 2.0,
+                      divisions: 200,
+                      label: '${saturation[currentIndex]?.toStringAsFixed(2)}x',
+                      onChanged: (value) => setState(() => saturation[currentIndex] = value),
+                    ),
+                    const SizedBox(height: 24),
+                    // Reset Button
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          brightness[currentIndex] = 0.0;
+                          contrast[currentIndex] = 1.0;
+                          saturation[currentIndex] = 1.0;
+                        });
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Reset All'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueGrey,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentFilter = selectedFilters[currentIndex] ?? 'None';
@@ -365,6 +457,14 @@ class _EditorPageState extends State<EditorPage> {
                     backgroundColor: Colors.orange,
                   ),
                 ),
+                            ElevatedButton.icon(
+              onPressed: showAdjustModal,
+              icon: const Icon(Icons.tune),
+              label: const Text('Adjust'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+              ),
+            ),
                 ElevatedButton.icon(
                   onPressed: downloadImage,
                   icon: const Icon(Icons.download),
