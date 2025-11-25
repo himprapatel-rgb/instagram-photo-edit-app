@@ -5,6 +5,22 @@ All notable changes to the Instagram Photo Editor project will be documented in 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-11-25
+
+### Changed
+- **Consolidated Filters UI**: Replaced horizontal filter button list with single unified "Filters" button
+- **Filter Selection Modal**: All 24 filters now available in an organized grid modal dialog
+- **Improved Filter Discovery**: Users can easily browse and select from all available filters
+- **Better Space Utilization**: More compact editor layout with cleaner button arrangement
+- **Auto-closing Modal**: Filter modal automatically closes after filter selection
+- **Visual Feedback**: Currently selected filter is highlighted in the modal grid
+
+### User Experience Improvements
+- Faster filter browsing without horizontal scrolling
+- Cleaner interface with less clutter
+- Organized filter presentation in 4-column grid layout
+- Maintains all existing functionality (intensity slider, Previous/Next, Download)
+
 ---
 
 ## [0.2.0] - 2025-11-25
