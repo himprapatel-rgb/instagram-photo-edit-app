@@ -262,8 +262,10 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
 class EditorPage extends StatefulWidget {
   final List<String> imageUrls;
+  
   const EditorPage({Key? key, required this.imageUrls}) : super(key: key);
 
   @override
