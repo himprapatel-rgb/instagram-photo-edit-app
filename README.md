@@ -5,6 +5,11 @@
 [![Dart](https://img.shields.io/badge/Dart-3.0+-blue.svg)](https://dart.dev/)
 [![Open Source](https://img.shields.io/badge/Open%20Source-❤️-red.svg)](https://github.com/himprapatel-rgb/instagram-photo-edit-app)
 
+> **Version:** 0.4.0 (November 25, 2025)  
+> **Status:** ✅ Active Development | 🚀 Live Demo Available  
+> **Latest Updates:** Live filter preview, Image thumbnails, Adjustment controls (Brightness/Contrast/Saturation)
+
+
 A professional-grade **Flutter** photo editing application for Instagram photos. Built with open-source components and featuring **psychologically-optimized UI**, gamification, and social engagement features inspired by industry-leading apps like VSCO, Snapseed, Adobe Lightroom, and Canva.
 
 ## 🎯 Project Vision
@@ -57,6 +62,17 @@ Choose from a curated collection of Instagram-style filters:
 - **Temperature** - Adjust warmth/coolness
 - **Tint** - Color balance adjustments
 - **Vignette** - Professional edge darkening
+- 
+**✨ NEW: Recently Added Features**
+
+- **🎭 Live Filter Preview** - See filters applied in real-time with persistent bottom sheet
+- **🖼️ Image Thumbnail Previews** - Filter selector shows actual image with filter applied
+- **🎚️ Brightness Adjustment** - Slider control (-100 to +100) with real-time updates
+- **⚡ Contrast Control** - Enhance depth and definition (0.5x to 2.0x)
+- **🌈 Saturation Control** - Color intensity adjustment (0 to 2.0x)
+- **🔄 Reset All** - One-tap restore to default adjustments
+- **📊 Real-time Value Display** - See exact adjustment values while editing
+- **🎨 Persistent Modal UI** - Filter panel stays open for easy experimentation
 
 ### 🧠 Psychological Engagement Features
 
@@ -255,6 +271,11 @@ Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
 - [x] Advanced editing tools
 - [x] Web deployment
 - [x] GitHub Pages hosting
+- [ ] - [x] Live filter preview with modal bottom sheet
+- [x] Image thumbnail previews in filter selector
+- [x] Brightness/Contrast/Saturation adjustment UI
+- [x] Real-time adjustment sliders with value display
+- [x] Reset adjustments functionality
 
 ### Phase 2: Psychological UI 🚧
 - [x] Daily streaks system
