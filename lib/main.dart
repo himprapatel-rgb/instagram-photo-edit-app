@@ -56,31 +56,212 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Instagram Photo Editor')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF833AB4),  // Instagram Purple
+              Color(0xFFFD1D1D),  // Instagram Pink
+              Color(0xFFFCAF45),  // Instagram Orange
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Logo Section
+                  Icon(
+                    Icons.camera_alt_rounded,
+                    size: 80,
+                    color: Colors.white,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Instagram Photo Editor',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    '24 Professional Filters',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white.withOpacity(0.9),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  SizedBox(height: 48),
+
+                  // Feature Cards with Glassmorphism
+                  _buildGlassCard(
+                    icon: Icons.filter_vintage,
+                    title: 'Pro Filters',
+                    description: '24 Instagram-style filters',
+                  ),
+                  SizedBox(height: 16),
+                  _buildGlassCard(
+                    icon: Icons.tune,
+                    title: 'Adjustments',
+                    description: 'Brightness, Contrast, Saturation',
+                  ),
+                  SizedBox(height: 16),
+                  _buildGlassCard(
+                    icon: Icons.auto_awesome,
+                    title: 'Real-time Preview',
+                    description: 'See changes instantly',
+                  ),
+                  SizedBox(height: 48),
+
+                  // CTA Button with Gradient
+                  Container(
+                    width: double.infinity,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.3),
+                          Colors.white.withOpacity(0.2),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.4),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 20,
+                          offset: Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: pickImages,
+                        borderRadius: BorderRadius.circular(30),
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.photo_library,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                              SizedBox(width: 12),
+                              Text(
+                                'Pick Photos',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 24),
+
+                  // Stats
+                  Text(
+                    '✨ Free • No Watermark • Unlimited Edits',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+    // Glassmorphism Card Widget
+  Widget _buildGlassCard({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
             children: [
-              const Icon(Icons.image, size: 80, color: Colors.blue),
-              const SizedBox(height: 24),
-              const Text('24 Instagram Filters Available',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: pickImages,
-                icon: const Icon(Icons.photo_library),
-                label: const Text('Pick Photos'),
-                style: ElevatedButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 32, vertical: 16)),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-      );
-}
-
+      ),
+    );
+  }
 class EditorPage extends StatefulWidget {
   final List<String> imageUrls;
   const EditorPage({Key? key, required this.imageUrls}) : super(key: key);
