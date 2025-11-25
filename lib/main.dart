@@ -273,6 +273,9 @@ class EditorPage extends StatefulWidget {
 class _EditorPageState extends State<EditorPage> {
   int currentIndex = 0;
   Map<int, String> selectedFilters = {};
+    Map<int, double> brightness = {};
+  Map<int, double> contrast = {};
+  Map<int, double> saturation = {};
   Map<int, double> filterIntensity = {};
 
   final Map<String, ui.ColorFilter> filterMatrix = {
@@ -280,11 +283,7 @@ class _EditorPageState extends State<EditorPage> {
     'Clarendon': ui.ColorFilter.srgbToLinearGamma(),
     'Gingham':
         ui.ColorFilter.mode(Colors.cyan.withOpacity(0.1), BlendMode.lighten),
-      Map<int, double> brightness = {};
-  Map<int, double> contrast = {};
-  Map<int, double> saturation = {};
-    'Juno':
-        ui.ColorFilter.mode(Colors.yellow.withOpacity(0.1), BlendMode.lighten),
+              ui.ColorFilter.mode(Colors.yellow.withOpacity(0.1), BlendMode.lighten),
     'Lark':
         ui.ColorFilter.mode(Colors.blue.withOpacity(0.1), BlendMode.lighten),
     'Ludwig': ui.ColorFilter.mode(Colors.white.withOpacity(0.2),
