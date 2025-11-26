@@ -5,7 +5,7 @@
 [![Dart](https://img.shields.io/badge/Dart-3.0+-blue.svg)](https://dart.dev/)
 [![Open Source](https://img.shields.io/badge/Open%20Source-❤️-red.svg)](https://github.com/himprapatel-rgb/instagram-photo-edit-app)
 
-> **Version:** 0.4.0 (November 25, 2025)  
+> **Version:** 0.5.0 (November 26, 2025)  
 > **Status:** ✅ Active Development | 🚀 Live Demo Available  
 > **Latest Updates:** Live filter preview, Image thumbnails, Adjustment controls (Brightness/Contrast/Saturation)
 
@@ -94,7 +94,7 @@ Choose from a curated collection of Instagram-style filters:
 - **Snapchat Export** - Quick story uploads  
 - **Cross-Platform Sharing** - One-tap multi-platform posts
 
-### 🤖 AI-Powered Features (Coming Soon)
+### 🤖 AI-Powered Features (Now Available!)
 
 - **Auto-Enhance** - AI-powered one-tap improvements
 - **Smart Crop** - AI-suggested composition
