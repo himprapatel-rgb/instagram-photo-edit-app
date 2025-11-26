@@ -552,5 +552,5 @@ ui.ColorFilter _getAdjustmentFilter() {
 ---
 ---
 
-**Last Updated:** November 24, 2025  
+**Last Updated:** November 26, 2025  
 **Maintained by:** Instagram Photo Editor Team
