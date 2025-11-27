@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'dart:async';
 import 'dart:math' as math;
 
-// v2.0.0 - PROFESSIONAL Photo Editor - Best in Market Quality
+// v2.0.1 - PROFESSIONAL Photo Editor - Best in Market Quality
 // Features: Pro-grade filters, Advanced color science, Real AI processing
 // Quality: Comparable to VSCO, Lightroom, Snapseed
 
@@ -60,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen> {
         Text('PRO', style: TextStyle(fontSize: 48, fontWeight: FontWeight.w100, color: Colors.white, letterSpacing: 20)),
         Text('Photo Editor', style: TextStyle(fontSize: 18, color: Colors.white70)),
         SizedBox(height: 8),
-        Text('v2.0.0 • Professional Quality', style: TextStyle(fontSize: 12, color: Colors.white54)),
+        Text('v2.0.1 • Professional Quality', style: TextStyle(fontSize: 12, color: Colors.white54)),
       ])),
     ),
   );
@@ -79,7 +79,7 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(width: 16),
           const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('PRO Editor', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-            Text('v2.0.0 • Professional', style: TextStyle(fontSize: 12, color: Colors.white54)),
+            Text('v2.0.1 • Professional', style: TextStyle(fontSize: 12, color: Colors.white54)),
           ]),
         ]),
         const SizedBox(height: 48),
@@ -336,7 +336,7 @@ class _EditorScreenState extends State<EditorScreen> {
             ),
       ),
       // Professional toolbar
-      if (_imageDataUrl != null) _buildProToolbar(),
+            _buildProToolbar(),
     ]),
   );
 
