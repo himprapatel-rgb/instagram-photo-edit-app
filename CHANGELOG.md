@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+
+## [0.8.0] - 2025-11-27
+
+### Added
+- **Batch Export Service**
+  - AsyncExportService with progress tracking
+  - Batch processing for multiple images
+  - Cancel functionality
+  - Error handling
+
+- **Leaderboard System**
+  - LeaderboardEntry model with rank/XP/level
+  - LeaderboardService with 10-player default data
+  - Dynamic ranking calculations
+  - User profile integration
+
+- **Batch Export Widget**
+  - BatchExportProgressWidget with progress indicators
+  - Circular and linear progress bars
+  - Real-time updates
+  - Cancel/Done button controls
+
+- **Leaderboard Widget**
+  - LeaderboardWidget with top 5 display
+  - User rank highlighting
+  - XP and level metrics
+  - Time-based update formatting
+
+### Changed
+- Enhanced HomePage with leaderboard support
+- Improved state management for batch operations
+- Better error handling for exports
+- Updated UI components
+
+### Technical Details
+- Total Lines of Code: 1,841 (up from 1,447)
+- Code Size: 55.8 KB (up from 44.2 KB)
+- Added 394 lines of new functionality
+- 4 new service/model classes
+- 2 new widget components
+- Project Progress: 78% → 81%
+
+---
 ## [0.7.0] - 2025-11-27
 
 ### Added
