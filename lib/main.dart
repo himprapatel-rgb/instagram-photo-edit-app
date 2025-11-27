@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:html' as html;
 import 'dart:ui' as ui;
 import 'dart:async';
-// v0.6.0 - Gamification UI Integration & Enhanced Features
+import 'dart:math' as math;
+// v0.7.0 - Crop & Resize, Undo/Redo System, Enhanced Features
 
 void main() => runApp(const MyApp());
 
@@ -24,8 +25,92 @@ class MyApp extends StatelessWidget {
   );
 }
 
-// ==================== GAMIFICATION DATA MODELS ====================
+// ==================== EDIT HISTORY FOR UNDO/REDO ====================
+class EditState {
+  final double brightness;
+  final double contrast;
+  final double saturation;
+  final double warmth;
+  final double vignette;
+  final double grain;
+  final double sharpness;
+  final String? activeFilter;
+  final Rect? cropRect;
+  
+  EditState({
+    this.brightness = 0.0,
+    this.contrast = 0.0,
+    this.saturation = 0.0,
+    this.warmth = 0.0,
+    this.vignette = 0.0,
+    this.grain = 0.0,
+    this.sharpness = 0.0,
+    this.activeFilter,
+    this.cropRect,
+  });
+  
+  EditState copyWith({
+    double? brightness,
+    double? contrast,
+    double? saturation,
+    double? warmth,
+    double? vignette,
+    double? grain,
+    double? sharpness,
+    String? activeFilter,
+    Rect? cropRect,
+  }) {
+    return EditState(
+      brightness: brightness ?? this.brightness,
+      contrast: contrast ?? this.contrast,
+      saturation: saturation ?? this.saturation,
+      warmth: warmth ?? this.warmth,
+      vignette: vignette ?? this.vignette,
+      grain: grain ?? this.grain,
+      sharpness: sharpness ?? this.sharpness,
+      activeFilter: activeFilter ?? this.activeFilter,
+      cropRect: cropRect ?? this.cropRect,
+    );
+  }
+}
 
+class EditHistory {
+  final List<EditState> _undoStack = [];
+  final List<EditState> _redoStack = [];
+  EditState _currentState = EditState();
+  
+  EditState get current => _currentState;
+  bool get canUndo => _undoStack.isNotEmpty;
+  bool get canRedo => _redoStack.isNotEmpty;
+  
+  void pushState(EditState state) {
+    _undoStack.add(_currentState);
+    _currentState = state;
+    _redoStack.clear();
+  }
+  
+  EditState? undo() {
+    if (_undoStack.isEmpty) return null;
+    _redoStack.add(_currentState);
+    _currentState = _undoStack.removeLast();
+    return _currentState;
+  }
+  
+  EditState? redo() {
+    if (_redoStack.isEmpty) return null;
+    _undoStack.add(_currentState);
+    _currentState = _redoStack.removeLast();
+    return _currentState;
+  }
+  
+  void reset() {
+    _undoStack.clear();
+    _redoStack.clear();
+    _currentState = EditState();
+  }
+}
+
+// ==================== GAMIFICATION DATA MODELS ====================
 class UserStats {
   int totalEdits;
   int currentStreak;
@@ -34,6 +119,7 @@ class UserStats {
   int level;
   DateTime? lastEditDate;
   List<String> unlockedAchievements;
+  List<String> completedChallenges;
 
   UserStats({
     this.totalEdits = 0,
@@ -43,72 +129,101 @@ class UserStats {
     this.level = 1,
     this.lastEditDate,
     List<String>? unlockedAchievements,
-  }) : unlockedAchievements = unlockedAchievements ?? [];
+    List<String>? completedChallenges,
+  }) : unlockedAchievements = unlockedAchievements ?? [],
+       completedChallenges = completedChallenges ?? [];
+
+  int get xpForNextLevel => level * 100;
+  double get levelProgress => (totalXP % (level * 100)) / (level * 100);
 }
 
 class Achievement {
   final String id;
-  final String title;
+  final String name;
   final String description;
   final String icon;
-  final int requiredValue;
+  final int xpReward;
+  final bool Function(UserStats) condition;
 
-  const Achievement({
+  Achievement({
     required this.id,
-    required this.title,
+    required this.name,
     required this.description,
     required this.icon,
-    required this.requiredValue,
+    required this.xpReward,
+    required this.condition,
   });
 }
 
 class DailyChallenge {
+  final String id;
   final String title;
   final String description;
-  final int xpReward;
   final int targetCount;
-  int currentCount;
-  bool completed;
+  final int currentProgress;
+  final int xpReward;
+  final DateTime expiresAt;
 
   DailyChallenge({
+    required this.id,
     required this.title,
     required this.description,
-    required this.xpReward,
     required this.targetCount,
-    this.currentCount = 0,
-    this.completed = false,
+    this.currentProgress = 0,
+    required this.xpReward,
+    required this.expiresAt,
   });
+
+  bool get isCompleted => currentProgress >= targetCount;
+  double get progress => currentProgress / targetCount;
 }
 
 // ==================== GAMIFICATION SERVICE ====================
-
 class GamificationService {
   static final GamificationService _instance = GamificationService._internal();
   factory GamificationService() => _instance;
   GamificationService._internal();
 
-  UserStats stats = UserStats();
-  DailyChallenge? dailyChallenge;
+  UserStats _stats = UserStats();
+  UserStats get stats => _stats;
 
-  static const List<int> levelThresholds = [
-    0, 100, 250, 500, 1000, 2000, 3500, 5500, 8000, 12000,
-    17000, 23000, 30000, 40000, 52000,
+  final List<Achievement> achievements = [
+    Achievement(
+      id: 'first_edit',
+      name: 'First Steps',
+      description: 'Complete your first edit',
+      icon: '🎨',
+      xpReward: 50,
+      condition: (stats) => stats.totalEdits >= 1,
+    ),
+    Achievement(
+      id: 'edit_master',
+      name: 'Edit Master',
+      description: 'Complete 50 edits',
+      icon: '🏆',
+      xpReward: 200,
+      condition: (stats) => stats.totalEdits >= 50,
+    ),
+    Achievement(
+      id: 'streak_warrior',
+      name: 'Streak Warrior',
+      description: 'Maintain a 7-day streak',
+      icon: '🔥',
+      xpReward: 150,
+      condition: (stats) => stats.currentStreak >= 7,
+    ),
+    Achievement(
+      id: 'level_up',
+      name: 'Rising Star',
+      description: 'Reach level 5',
+      icon: '⭐',
+      xpReward: 100,
+      condition: (stats) => stats.level >= 5,
+    ),
   ];
 
-  static const int xpPerEdit = 15;
-  static const int xpPerStreak = 30;
-  static const int xpPerAchievement = 150;
-
-  static const List<Achievement> achievements = [
-    Achievement(id: 'first_edit', title: 'First Steps', description: 'Complete your first edit', icon: '🎨', requiredValue: 1),
-    Achievement(id: 'edit_10', title: 'Getting Started', description: 'Complete 10 edits', icon: '🖼️', requiredValue: 10),
-    Achievement(id: 'edit_50', title: 'Photo Enthusiast', description: 'Complete 50 edits', icon: '📸', requiredValue: 50),
-    Achievement(id: 'edit_100', title: 'Master Editor', description: 'Complete 100 edits', icon: '👑', requiredValue: 100),
-    Achievement(id: 'streak_3', title: 'On Fire', description: '3-day editing streak', icon: '🔥', requiredValue: 3),
-    Achievement(id: 'streak_7', title: 'Week Warrior', description: '7-day editing streak', icon: '⚡', requiredValue: 7),
-    Achievement(id: 'level_5', title: 'Rising Star', description: 'Reach level 5', icon: '⭐', requiredValue: 5),
-    Achievement(id: 'level_10', title: 'Photo Legend', description: 'Reach level 10', icon: '🏆', requiredValue: 10),
-  ];
+  DailyChallenge? _currentChallenge;
+  DailyChallenge? get currentChallenge => _currentChallenge;
 
   void initialize() {
     _generateDailyChallenge();
@@ -116,141 +231,422 @@ class GamificationService {
 
   void _generateDailyChallenge() {
     final challenges = [
-      DailyChallenge(title: 'Filter Master', description: 'Apply 5 different filters', xpReward: 100, targetCount: 5),
-      DailyChallenge(title: 'Quick Editor', description: 'Edit 3 photos', xpReward: 75, targetCount: 3),
-      DailyChallenge(title: 'Adjustment Pro', description: 'Use all adjustment sliders', xpReward: 80, targetCount: 3),
+      {'title': 'Filter Explorer', 'desc': 'Apply 3 different filters', 'target': 3, 'xp': 75},
+      {'title': 'Edit Enthusiast', 'desc': 'Complete 5 edits today', 'target': 5, 'xp': 100},
+      {'title': 'Quick Editor', 'desc': 'Edit and save 2 photos', 'target': 2, 'xp': 50},
     ];
-    dailyChallenge = challenges[DateTime.now().day % challenges.length];
+    final random = math.Random();
+    final challenge = challenges[random.nextInt(challenges.length)];
+    _currentChallenge = DailyChallenge(
+      id: 'daily_${DateTime.now().day}',
+      title: challenge['title'] as String,
+      description: challenge['desc'] as String,
+      targetCount: challenge['target'] as int,
+      xpReward: challenge['xp'] as int,
+      expiresAt: DateTime.now().add(Duration(hours: 24)),
+    );
   }
 
-  List<Achievement> recordEdit() {
-    stats.totalEdits++;
-    stats.totalXP += xpPerEdit;
-    _checkLevelUp();
-    return _checkAchievements();
+  void recordEdit() {
+    _stats.totalEdits++;
+    _addXP(10);
+    _updateStreak();
+    _checkAchievements();
   }
 
-  void _checkLevelUp() {
-    for (int i = levelThresholds.length - 1; i >= 0; i--) {
-      if (stats.totalXP >= levelThresholds[i]) {
-        stats.level = i + 1;
-        break;
-      }
+  void _addXP(int amount) {
+    _stats.totalXP += amount;
+    while (_stats.totalXP >= _stats.xpForNextLevel) {
+      _stats.totalXP -= _stats.xpForNextLevel;
+      _stats.level++;
     }
   }
 
-  List<Achievement> _checkAchievements() {
-    final newAchievements = <Achievement>[];
+  void _updateStreak() {
+    final now = DateTime.now();
+    if (_stats.lastEditDate != null) {
+      final diff = now.difference(_stats.lastEditDate!).inDays;
+      if (diff == 1) {
+        _stats.currentStreak++;
+      } else if (diff > 1) {
+        _stats.currentStreak = 1;
+      }
+    } else {
+      _stats.currentStreak = 1;
+    }
+    if (_stats.currentStreak > _stats.longestStreak) {
+      _stats.longestStreak = _stats.currentStreak;
+    }
+    _stats.lastEditDate = now;
+  }
+
+  void _checkAchievements() {
     for (final achievement in achievements) {
-      if (stats.unlockedAchievements.contains(achievement.id)) continue;
-      bool unlocked = false;
-      if (achievement.id.startsWith('edit_') || achievement.id == 'first_edit') {
-        unlocked = stats.totalEdits >= achievement.requiredValue;
-      } else if (achievement.id.startsWith('streak_')) {
-        unlocked = stats.currentStreak >= achievement.requiredValue;
-      } else if (achievement.id.startsWith('level_')) {
-        unlocked = stats.level >= achievement.requiredValue;
-      }
-      if (unlocked) {
-        stats.unlockedAchievements.add(achievement.id);
-        stats.totalXP += xpPerAchievement;
-        newAchievements.add(achievement);
+      if (!_stats.unlockedAchievements.contains(achievement.id) &&
+          achievement.condition(_stats)) {
+        _stats.unlockedAchievements.add(achievement.id);
+        _addXP(achievement.xpReward);
       }
     }
-    return newAchievements;
-  }
-
-  double getLevelProgress() {
-    if (stats.level >= levelThresholds.length) return 1.0;
-    final currentLevelXP = levelThresholds[stats.level - 1];
-    final nextLevelXP = levelThresholds[stats.level];
-    final progressXP = stats.totalXP - currentLevelXP;
-    final requiredXP = nextLevelXP - currentLevelXP;
-    return (progressXP / requiredXP).clamp(0.0, 1.0);
-  }
-
-  int getXPForNextLevel() {
-    if (stats.level >= levelThresholds.length) return 0;
-    return levelThresholds[stats.level] - stats.totalXP;
-  }
-
-  String getLevelTitle() {
-    if (stats.level <= 1) return 'Beginner';
-    if (stats.level <= 3) return 'Novice';
-    if (stats.level <= 5) return 'Intermediate';
-    if (stats.level <= 7) return 'Advanced';
-    if (stats.level <= 9) return 'Expert';
-    return 'Master';
   }
 }
 
-// ==================== GAMIFICATION UI WIDGETS ====================
+// ==================== CROP OVERLAY WIDGET ====================
+class CropOverlayWidget extends StatefulWidget {
+  final double imageWidth;
+  final double imageHeight;
+  final Function(Rect) onCropChanged;
+  final Rect? initialCrop;
 
-// XP Bar Widget
+  const CropOverlayWidget({
+    Key? key,
+    required this.imageWidth,
+    required this.imageHeight,
+    required this.onCropChanged,
+    this.initialCrop,
+  }) : super(key: key);
+
+  @override
+  _CropOverlayWidgetState createState() => _CropOverlayWidgetState();
+}
+
+class _CropOverlayWidgetState extends State<CropOverlayWidget> {
+  late Rect cropRect;
+  String aspectRatio = 'free';
+  bool isDragging = false;
+  String? activeHandle;
+  Offset? dragStart;
+
+  @override
+  void initState() {
+    super.initState();
+    cropRect = widget.initialCrop ?? Rect.fromLTWH(
+      widget.imageWidth * 0.1,
+      widget.imageHeight * 0.1,
+      widget.imageWidth * 0.8,
+      widget.imageHeight * 0.8,
+    );
+  }
+
+  void _setAspectRatio(String ratio) {
+    setState(() {
+      aspectRatio = ratio;
+      final center = cropRect.center;
+      double newWidth, newHeight;
+      
+      switch (ratio) {
+        case '1:1':
+          newWidth = newHeight = math.min(cropRect.width, cropRect.height);
+          break;
+        case '4:3':
+          newWidth = cropRect.width;
+          newHeight = newWidth * 3 / 4;
+          break;
+        case '16:9':
+          newWidth = cropRect.width;
+          newHeight = newWidth * 9 / 16;
+          break;
+        case '9:16':
+          newHeight = cropRect.height;
+          newWidth = newHeight * 9 / 16;
+          break;
+        default:
+          return;
+      }
+      
+      cropRect = Rect.fromCenter(
+        center: center,
+        width: newWidth.clamp(50, widget.imageWidth),
+        height: newHeight.clamp(50, widget.imageHeight),
+      );
+      widget.onCropChanged(cropRect);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Aspect ratio buttons
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildRatioButton('Free', 'free'),
+              _buildRatioButton('1:1', '1:1'),
+              _buildRatioButton('4:3', '4:3'),
+              _buildRatioButton('16:9', '16:9'),
+              _buildRatioButton('9:16', '9:16'),
+            ],
+          ),
+        ),
+        SizedBox(height: 16),
+        // Crop area
+        Expanded(
+          child: GestureDetector(
+            onPanStart: _onPanStart,
+            onPanUpdate: _onPanUpdate,
+            onPanEnd: (_) => setState(() => isDragging = false),
+            child: CustomPaint(
+              painter: CropPainter(cropRect: cropRect, imageSize: Size(widget.imageWidth, widget.imageHeight)),
+              size: Size(widget.imageWidth, widget.imageHeight),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRatioButton(String label, String ratio) {
+    final isSelected = aspectRatio == ratio;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4),
+      child: ElevatedButton(
+        onPressed: () => _setAspectRatio(ratio),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSelected ? Color(0xFF833AB4) : Colors.grey[800],
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+        child: Text(label, style: TextStyle(fontSize: 12)),
+      ),
+    );
+  }
+
+  void _onPanStart(DragStartDetails details) {
+    dragStart = details.localPosition;
+    isDragging = true;
+  }
+
+  void _onPanUpdate(DragUpdateDetails details) {
+    if (!isDragging) return;
+    setState(() {
+      final delta = details.delta;
+      cropRect = cropRect.translate(delta.dx, delta.dy);
+      // Clamp to image bounds
+      cropRect = Rect.fromLTWH(
+        cropRect.left.clamp(0, widget.imageWidth - cropRect.width),
+        cropRect.top.clamp(0, widget.imageHeight - cropRect.height),
+        cropRect.width,
+        cropRect.height,
+      );
+      widget.onCropChanged(cropRect);
+    });
+  }
+}
+
+class CropPainter extends CustomPainter {
+  final Rect cropRect;
+  final Size imageSize;
+
+  CropPainter({required this.cropRect, required this.imageSize});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Dim areas outside crop
+    final dimPaint = Paint()..color = Colors.black.withOpacity(0.6);
+    
+    // Top
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, cropRect.top), dimPaint);
+    // Bottom
+    canvas.drawRect(Rect.fromLTWH(0, cropRect.bottom, size.width, size.height - cropRect.bottom), dimPaint);
+    // Left
+    canvas.drawRect(Rect.fromLTWH(0, cropRect.top, cropRect.left, cropRect.height), dimPaint);
+    // Right
+    canvas.drawRect(Rect.fromLTWH(cropRect.right, cropRect.top, size.width - cropRect.right, cropRect.height), dimPaint);
+    
+    // Crop border
+    final borderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawRect(cropRect, borderPaint);
+    
+    // Grid lines (rule of thirds)
+    final gridPaint = Paint()
+      ..color = Colors.white.withOpacity(0.5)
+      ..strokeWidth = 0.5;
+    
+    final thirdWidth = cropRect.width / 3;
+    final thirdHeight = cropRect.height / 3;
+    
+    for (int i = 1; i < 3; i++) {
+      canvas.drawLine(
+        Offset(cropRect.left + thirdWidth * i, cropRect.top),
+        Offset(cropRect.left + thirdWidth * i, cropRect.bottom),
+        gridPaint,
+      );
+      canvas.drawLine(
+        Offset(cropRect.left, cropRect.top + thirdHeight * i),
+        Offset(cropRect.right, cropRect.top + thirdHeight * i),
+        gridPaint,
+      );
+    }
+    
+    // Corner handles
+    final handlePaint = Paint()..color = Colors.white;
+    final handleSize = 12.0;
+    final corners = [
+      cropRect.topLeft,
+      cropRect.topRight,
+      cropRect.bottomLeft,
+      cropRect.bottomRight,
+    ];
+    
+    for (final corner in corners) {
+      canvas.drawCircle(corner, handleSize / 2, handlePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(CropPainter oldDelegate) => cropRect != oldDelegate.cropRect;
+}
+
+// ==================== BEFORE/AFTER COMPARISON WIDGET ====================
+class BeforeAfterWidget extends StatefulWidget {
+  final String originalImageUrl;
+  final String editedImageUrl;
+  final String filterCSS;
+
+  const BeforeAfterWidget({
+    Key? key,
+    required this.originalImageUrl,
+    required this.editedImageUrl,
+    required this.filterCSS,
+  }) : super(key: key);
+
+  @override
+  _BeforeAfterWidgetState createState() => _BeforeAfterWidgetState();
+}
+
+class _BeforeAfterWidgetState extends State<BeforeAfterWidget> {
+  double sliderPosition = 0.5;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return GestureDetector(
+          onHorizontalDragUpdate: (details) {
+            setState(() {
+              sliderPosition = (details.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+            });
+          },
+          child: Stack(
+            children: [
+              // Edited image (full)
+              Positioned.fill(
+                child: HtmlElementView(
+                  viewType: 'edited-compare-${widget.editedImageUrl.hashCode}',
+                ),
+              ),
+              // Original image (clipped)
+              ClipRect(
+                clipper: _HorizontalClipper(sliderPosition),
+                child: HtmlElementView(
+                  viewType: 'original-compare-${widget.originalImageUrl.hashCode}',
+                ),
+              ),
+              // Slider line
+              Positioned(
+                left: constraints.maxWidth * sliderPosition - 2,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  width: 4,
+                  color: Colors.white,
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                      ),
+                      child: Icon(Icons.compare_arrows, color: Colors.black),
+                    ),
+                  ),
+                ),
+              ),
+              // Labels
+              Positioned(
+                left: 8,
+                bottom: 8,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text('Original', style: TextStyle(color: Colors.white, fontSize: 12)),
+                ),
+              ),
+              Positioned(
+                right: 8,
+                bottom: 8,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text('Edited', style: TextStyle(color: Colors.white, fontSize: 12)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _HorizontalClipper extends CustomClipper<Rect> {
+  final double position;
+  _HorizontalClipper(this.position);
+
+  @override
+  Rect getClip(Size size) => Rect.fromLTWH(0, 0, size.width * position, size.height);
+
+  @override
+  bool shouldReclip(_HorizontalClipper oldClipper) => position != oldClipper.position;
+}
+
+// ==================== GAMIFICATION WIDGETS ====================
 class XPBarWidget extends StatelessWidget {
-  final GamificationService gamification;
+  final UserStats stats;
   
-  const XPBarWidget({Key? key, required this.gamification}) : super(key: key);
+  const XPBarWidget({Key? key, required this.stats}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF1A1F3A), Color(0xFF2D3561)],
+          colors: [Color(0xFF833AB4), Color(0xFFFD1D1D)],
         ),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Level Badge
-          Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF833AB4), Color(0xFFFD1D1D)],
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              'Lv.${gamification.stats.level}',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Level ${stats.level}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text('${stats.totalXP} / ${stats.xpForNextLevel} XP', style: TextStyle(fontSize: 12)),
+            ],
           ),
-          SizedBox(width: 12),
-          // XP Progress
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      gamification.getLevelTitle(),
-                      style: TextStyle(fontSize: 12, color: Colors.white70),
-                    ),
-                    Text(
-                      '${gamification.stats.totalXP} XP',
-                      style: TextStyle(fontSize: 12, color: Color(0xFFFCAF45)),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: gamification.getLevelProgress(),
-                    backgroundColor: Colors.white24,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Color(0xFFFCAF45),
-                    ),
-                    minHeight: 6,
-                  ),
-                ),
-              ],
+          SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: stats.levelProgress,
+              backgroundColor: Colors.white24,
+              valueColor: AlwaysStoppedAnimation(Colors.white),
+              minHeight: 8,
             ),
           ),
         ],
@@ -259,7 +655,6 @@ class XPBarWidget extends StatelessWidget {
   }
 }
 
-// Streak Widget
 class StreakWidget extends StatelessWidget {
   final int streak;
   
@@ -268,203 +663,63 @@ class StreakWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: streak > 0 ? Color(0xFFFF6B35) : Colors.grey[800],
+        color: streak > 0 ? Colors.orange : Colors.grey[800],
         borderRadius: BorderRadius.circular(20),
-        boxShadow: streak > 0 ? [
-          BoxShadow(color: Color(0xFFFF6B35).withOpacity(0.4), blurRadius: 8),
-        ] : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(streak > 0 ? '🔥' : '❄️', style: TextStyle(fontSize: 16)),
-          SizedBox(width: 4),
-          Text(
-            '$streak day${streak != 1 ? 's' : ''}',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-          ),
+          Text('🔥', style: TextStyle(fontSize: 20)),
+          SizedBox(width: 8),
+          Text('$streak day${streak != 1 ? 's' : ''}', style: TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 }
 
-// Achievement Notification
-class AchievementNotification {
-  static void show(BuildContext context, Achievement achievement) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
-    
-    entry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: 100,
-        left: 20,
-        right: 20,
-        child: Material(
-          color: Colors.transparent,
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: Duration(milliseconds: 500),
-            builder: (context, value, child) => Opacity(
-              opacity: value,
-              child: Transform.scale(
-                scale: 0.8 + (value * 0.2),
-                child: child,
-              ),
-            ),
-            child: Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF833AB4), Color(0xFFFD1D1D), Color(0xFFFCAF45)],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(color: Color(0xFF833AB4).withOpacity(0.5), blurRadius: 20),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Text(achievement.icon, style: TextStyle(fontSize: 40)),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('🎉 Achievement Unlocked!',
-                          style: TextStyle(fontSize: 12, color: Colors.white70)),
-                        Text(achievement.title,
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text(achievement.description,
-                          style: TextStyle(fontSize: 12, color: Colors.white70)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    
-    overlay.insert(entry);
-    Future.delayed(Duration(seconds: 3), () => entry.remove());
-  }
-}
+class AchievementNotification extends StatelessWidget {
+  final Achievement achievement;
+  final VoidCallback onDismiss;
 
-// Level Up Animation
-class LevelUpAnimation {
-  static void show(BuildContext context, int newLevel) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 1.0),
-          duration: Duration(milliseconds: 800),
-          builder: (context, value, child) => Transform.scale(
-            scale: value,
-            child: child,
-          ),
-          child: Container(
-            padding: EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF833AB4), Color(0xFFFD1D1D)],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(color: Color(0xFF833AB4).withOpacity(0.6), blurRadius: 30),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('⭐', style: TextStyle(fontSize: 60)),
-                SizedBox(height: 16),
-                Text('LEVEL UP!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 2)),
-                SizedBox(height: 8),
-                Text('Level $newLevel', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold)),
-                SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Color(0xFF833AB4)),
-                  child: Text('Awesome!'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// Daily Challenge Card
-class DailyChallengeCard extends StatelessWidget {
-  final DailyChallenge challenge;
-  final VoidCallback onTap;
-  
-  const DailyChallengeCard({Key? key, required this.challenge, required this.onTap}) : super(key: key);
+  const AchievementNotification({
+    Key? key,
+    required this.achievement,
+    required this.onDismiss,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final progress = challenge.currentCount / challenge.targetCount;
-    return GestureDetector(
-      onTap: onTap,
+    return Material(
+      color: Colors.transparent,
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: EdgeInsets.all(16),
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: challenge.completed
-              ? [Colors.green[700]!, Colors.green[500]!]
-              : [Color(0xFF2D3561), Color(0xFF1A1F3A)],
+            colors: [Color(0xFF833AB4), Color(0xFFFD1D1D), Color(0xFFF77737)],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Color(0xFFFCAF45).withOpacity(0.5)),
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              children: [
-                Text('🎯', style: TextStyle(fontSize: 24)),
-                SizedBox(width: 8),
-                Text('Daily Challenge', style: TextStyle(color: Color(0xFFFCAF45), fontWeight: FontWeight.bold)),
-                Spacer(),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFFCAF45),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text('+${challenge.xpReward} XP', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black)),
-                ),
-              ],
-            ),
-            SizedBox(height: 12),
-            Text(challenge.title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text(challenge.description, style: TextStyle(color: Colors.white70)),
-            SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress.clamp(0.0, 1.0),
-                backgroundColor: Colors.white24,
-                valueColor: AlwaysStoppedAnimation<Color>(challenge.completed ? Colors.green : Color(0xFFFCAF45)),
-                minHeight: 8,
+            Text(achievement.icon, style: TextStyle(fontSize: 40)),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Achievement Unlocked!', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                  Text(achievement.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text('+${achievement.xpReward} XP', style: TextStyle(color: Colors.greenAccent)),
+                ],
               ),
             ),
-            SizedBox(height: 4),
-            Text('${challenge.currentCount}/${challenge.targetCount}', style: TextStyle(fontSize: 12, color: Colors.white70)),
+            IconButton(icon: Icon(Icons.close), onPressed: onDismiss),
           ],
         ),
       ),
@@ -472,54 +727,187 @@ class DailyChallengeCard extends StatelessWidget {
   }
 }
 
-// ==================== HOME PAGE ====================
+class DailyChallengeCard extends StatelessWidget {
+  final DailyChallenge challenge;
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const DailyChallengeCard({Key? key, required this.challenge}) : super(key: key);
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: challenge.isCompleted ? Colors.greenAccent : Colors.grey[700]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(challenge.isCompleted ? Icons.check_circle : Icons.flag, 
+                   color: challenge.isCompleted ? Colors.greenAccent : Color(0xFF833AB4)),
+              SizedBox(width: 8),
+              Text('Daily Challenge', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF833AB4))),
+              Spacer(),
+              Text('+${challenge.xpReward} XP', style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text(challenge.title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(challenge.description, style: TextStyle(color: Colors.grey)),
+          SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: challenge.progress,
+              backgroundColor: Colors.grey[800],
+              valueColor: AlwaysStoppedAnimation(challenge.isCompleted ? Colors.greenAccent : Color(0xFF833AB4)),
+            ),
+          ),
+          SizedBox(height: 4),
+          Text('${challenge.currentProgress}/${challenge.targetCount}', 
+               style: TextStyle(fontSize: 12, color: Colors.grey)),
+        ],
+      ),
+    );
+  }
 }
 
-class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  final GamificationService gamification = GamificationService();
-  bool showDailyChallenge = true;
+class LevelUpAnimation extends StatefulWidget {
+  final int newLevel;
+  final VoidCallback onComplete;
+
+  const LevelUpAnimation({Key? key, required this.newLevel, required this.onComplete}) : super(key: key);
+
+  @override
+  _LevelUpAnimationState createState() => _LevelUpAnimationState();
+}
+
+class _LevelUpAnimationState extends State<LevelUpAnimation> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    gamification.initialize();
+    _controller = AnimationController(duration: Duration(milliseconds: 1500), vsync: this);
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+    _controller.forward().then((_) {
+      Future.delayed(Duration(seconds: 1), widget.onComplete);
+    });
   }
 
-  void pickImages() async {
-    final input = html.FileUploadInputElement();
-    input.accept = 'image/*';
-    input.multiple = true;
-    input.click();
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _scaleAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: Container(
+            padding: EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF833AB4), Color(0xFFFD1D1D)],
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: Color(0xFF833AB4).withOpacity(0.5), blurRadius: 30, spreadRadius: 10)],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('⭐', style: TextStyle(fontSize: 60)),
+                Text('LEVEL UP!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Text('Level ${widget.newLevel}', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ==================== FILTER DATA ====================
+class FilterPreset {
+  final String name;
+  final String cssFilter;
+  final bool isPremium;
+
+  const FilterPreset({required this.name, required this.cssFilter, this.isPremium = false});
+}
+
+final List<FilterPreset> instagramFilters = [
+  FilterPreset(name: 'Original', cssFilter: 'none'),
+  FilterPreset(name: 'Clarendon', cssFilter: 'contrast(1.2) saturate(1.35)'),
+  FilterPreset(name: 'Gingham', cssFilter: 'brightness(1.05) hue-rotate(-10deg)'),
+  FilterPreset(name: 'Moon', cssFilter: 'grayscale(1) contrast(1.1) brightness(1.1)'),
+  FilterPreset(name: 'Lark', cssFilter: 'contrast(0.9) brightness(1.1) saturate(1.25)'),
+  FilterPreset(name: 'Reyes', cssFilter: 'sepia(0.22) brightness(1.1) contrast(0.85) saturate(0.75)'),
+  FilterPreset(name: 'Juno', cssFilter: 'contrast(1.15) saturate(1.8) sepia(0.1)'),
+  FilterPreset(name: 'Slumber', cssFilter: 'saturate(0.66) brightness(1.05) sepia(0.05)'),
+  FilterPreset(name: 'Crema', cssFilter: 'sepia(0.15) saturate(1.1) contrast(0.9)'),
+  FilterPreset(name: 'Ludwig', cssFilter: 'contrast(1.05) saturate(0.9) brightness(1.05)'),
+  FilterPreset(name: 'Aden', cssFilter: 'hue-rotate(-20deg) contrast(0.9) saturate(0.85) brightness(1.2)'),
+  FilterPreset(name: 'Perpetua', cssFilter: 'contrast(1.1) brightness(1.15) saturate(1.1)'),
+  FilterPreset(name: 'Amaro', cssFilter: 'hue-rotate(-10deg) contrast(0.9) brightness(1.1) saturate(1.5)', isPremium: true),
+  FilterPreset(name: 'Mayfair', cssFilter: 'contrast(1.1) saturate(1.1) sepia(0.1)', isPremium: true),
+  FilterPreset(name: 'Rise', cssFilter: 'brightness(1.05) sepia(0.08) contrast(0.9) saturate(0.9)', isPremium: true),
+  FilterPreset(name: 'Hudson', cssFilter: 'brightness(1.2) contrast(0.9) saturate(1.1)', isPremium: true),
+  FilterPreset(name: 'Valencia', cssFilter: 'sepia(0.15) saturate(1.5) contrast(1.1)', isPremium: true),
+  FilterPreset(name: 'X-Pro II', cssFilter: 'contrast(1.3) saturate(1.3) sepia(0.15)', isPremium: true),
+  FilterPreset(name: 'Sierra', cssFilter: 'contrast(0.85) saturate(0.75) sepia(0.2)', isPremium: true),
+  FilterPreset(name: 'Willow', cssFilter: 'grayscale(0.5) contrast(0.95) brightness(1.05)', isPremium: true),
+  FilterPreset(name: 'Lo-Fi', cssFilter: 'contrast(1.5) saturate(1.1)', isPremium: true),
+  FilterPreset(name: 'Inkwell', cssFilter: 'grayscale(1) contrast(1.1) brightness(1.1) sepia(0.3)', isPremium: true),
+  FilterPreset(name: 'Nashville', cssFilter: 'sepia(0.25) contrast(1.2) brightness(1.05) saturate(1.2)', isPremium: true),
+];
+
+// ==================== HOME PAGE ====================
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key}) : super(key: key);
+
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final GamificationService _gamification = GamificationService();
+  List<String> _imageUrls = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _gamification.initialize();
+  }
+
+  void _pickImages() {
+    final input = html.FileUploadInputElement()..accept = 'image/*'..multiple = true;
+    input.click();
     input.onChange.listen((e) {
       final files = input.files;
       if (files != null && files.isNotEmpty) {
-        List<String> dataUrls = [];
-        int loaded = 0;
-        for (var file in files) {
+        setState(() => _isLoading = true);
+        _imageUrls.clear();
+        for (final file in files) {
           final reader = html.FileReader();
           reader.readAsDataUrl(file);
-          reader.onLoad.listen((_) {
-            dataUrls.add(reader.result as String);
-            loaded++;
-            if (loaded == files.length) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EditorPage(
-                    imageUrls: dataUrls,
-                    gamification: gamification,
-                    onEditComplete: () => setState(() {}),
-                  ),
-                ),
-              );
-            }
+          reader.onLoadEnd.listen((e) {
+            setState(() {
+              _imageUrls.add(reader.result as String);
+              _isLoading = false;
+            });
           });
         }
       }
@@ -534,171 +922,196 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF833AB4),
-              Color(0xFFFD1D1D),
-              Color(0xFFFCAF45),
-            ],
-            stops: [0.0, 0.5, 1.0],
+            colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f0f23)],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // Header with Gamification
-              Padding(
-                padding: EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(child: XPBarWidget(gamification: gamification)),
-                    SizedBox(width: 12),
-                    StreakWidget(streak: gamification.stats.currentStreak),
-                  ],
-                ),
+              _buildHeader(),
+              _buildGamificationSection(),
+              Expanded(child: _buildMainContent()),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: Row(
+        children: [
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: [Color(0xFF833AB4), Color(0xFFFD1D1D), Color(0xFFF77737)],
+            ).createShader(bounds),
+            child: Text(
+              'InstaEdit Pro',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ),
+          Spacer(),
+          StreakWidget(streak: _gamification.stats.currentStreak),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGamificationSection() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          XPBarWidget(stats: _gamification.stats),
+          SizedBox(height: 12),
+          if (_gamification.currentChallenge != null)
+            DailyChallengeCard(challenge: _gamification.currentChallenge!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMainContent() {
+    if (_isLoading) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Color(0xFF833AB4)),
+            SizedBox(height: 16),
+            Text('Loading images...', style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+      );
+    }
+
+    if (_imageUrls.isEmpty) {
+      return _buildUploadSection();
+    }
+
+    return _buildImageGrid();
+  }
+
+  Widget _buildUploadSection() {
+    return Center(
+      child: GestureDetector(
+        onTap: _pickImages,
+        child: Container(
+          margin: EdgeInsets.all(32),
+          padding: EdgeInsets.all(48),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Color(0xFF833AB4), width: 2),
+            gradient: LinearGradient(
+              colors: [Color(0xFF833AB4).withOpacity(0.1), Color(0xFFFD1D1D).withOpacity(0.1)],
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_photo_alternate, size: 80, color: Color(0xFF833AB4)),
+              SizedBox(height: 16),
+              Text('Tap to Select Photos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text('Support for multiple images', style: TextStyle(color: Colors.grey)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageGrid() {
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('${_imageUrls.length} image(s) selected', style: TextStyle(color: Colors.grey)),
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: _pickImages,
+                    icon: Icon(Icons.add, color: Color(0xFF833AB4)),
+                    label: Text('Add More', style: TextStyle(color: Color(0xFF833AB4))),
+                  ),
+                  SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: () => setState(() => _imageUrls.clear()),
+                    icon: Icon(Icons.clear_all, color: Colors.red),
+                    label: Text('Clear All', style: TextStyle(color: Colors.red)),
+                  ),
+                ],
               ),
-              // Daily Challenge
-              if (showDailyChallenge && gamification.dailyChallenge != null)
-                DailyChallengeCard(
-                  challenge: gamification.dailyChallenge!,
-                  onTap: () => setState(() => showDailyChallenge = false),
-                ),
-              // Main Content
-              Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.camera_alt_rounded, size: 80, color: Colors.white),
-                        SizedBox(height: 16),
-                        Text(
-                          'Instagram Photo Editor',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          '24 Professional Filters • AI-Powered',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                        SizedBox(height: 32),
-                        _buildGlassCard(
-                          icon: Icons.filter_vintage,
-                          title: 'Pro Filters',
-                          description: '24 Instagram-style filters',
-                        ),
-                        SizedBox(height: 16),
-                        _buildGlassCard(
-                          icon: Icons.tune,
-                          title: 'Adjustments',
-                          description: 'Brightness, Contrast, Saturation',
-                        ),
-                        SizedBox(height: 16),
-                        _buildGlassCard(
-                          icon: Icons.emoji_events,
-                          title: 'Gamification',
-                          description: 'Earn XP, unlock achievements!',
-                        ),
-                        SizedBox(height: 32),
-                        _buildPickButton(),
-                        SizedBox(height: 24),
-                        Text(
-                          '✨ Free • No Watermark • Unlimited Edits',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withOpacity(0.8),
-                          ),
-                        ),
-                      ],
+            ],
+          ),
+        ),
+        Expanded(
+          child: GridView.builder(
+            padding: EdgeInsets.all(16),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: MediaQuery.of(context).size.width > 800 ? 4 : 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: _imageUrls.length,
+            itemBuilder: (context, index) => _buildImageTile(index),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImageTile(int index) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditorPage(
+            imageUrl: _imageUrls[index],
+            allImageUrls: _imageUrls,
+            currentIndex: index,
+          ),
+        ),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(_imageUrls[index], fit: BoxFit.cover),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [Colors.black87, Colors.transparent],
                     ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit, size: 16, color: Colors.white70),
+                      SizedBox(width: 4),
+                      Text('Tap to edit', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                    ],
                   ),
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGlassCard({
-    required IconData icon,
-    required String title,
-    required String description,
-  }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: Colors.white, size: 28),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
-                    SizedBox(height: 4),
-                    Text(description, style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.8))),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPickButton() {
-    return Container(
-      width: double.infinity,
-      height: 60,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.white.withOpacity(0.3), Colors.white.withOpacity(0.2)],
-        ),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: Offset(0, 10))],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: pickImages,
-          borderRadius: BorderRadius.circular(30),
-          child: Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.photo_library, color: Colors.white, size: 24),
-                SizedBox(width: 12),
-                Text('Pick Photos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
-              ],
-            ),
           ),
         ),
       ),
@@ -707,334 +1120,141 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 }
 
 // ==================== EDITOR PAGE ====================
-
 class EditorPage extends StatefulWidget {
-  final List<String> imageUrls;
-  final GamificationService gamification;
-  final VoidCallback onEditComplete;
+  final String imageUrl;
+  final List<String> allImageUrls;
+  final int currentIndex;
 
   const EditorPage({
     Key? key,
-    required this.imageUrls,
-    required this.gamification,
-    required this.onEditComplete,
+    required this.imageUrl,
+    required this.allImageUrls,
+    required this.currentIndex,
   }) : super(key: key);
 
   @override
-  State<EditorPage> createState() => _EditorPageState();
+  _EditorPageState createState() => _EditorPageState();
 }
 
 class _EditorPageState extends State<EditorPage> {
-  int currentIndex = 0;
-  Map<int, String> selectedFilters = {};
-  Map<int, double> brightness = {};
-  Map<int, double> contrast = {};
-  Map<int, double> saturation = {};
-  Map<int, double> filterIntensity = {};
-  int previousLevel = 1;
-
-  final Map<String, ui.ColorFilter> filterMatrix = {
-    'None': ui.ColorFilter.linearToSrgbGamma(),
-    'Clarendon': ui.ColorFilter.srgbToLinearGamma(),
-    'Gingham': ui.ColorFilter.mode(Colors.cyan.withOpacity(0.1), BlendMode.lighten),
-    'Juno': ui.ColorFilter.mode(Colors.yellow.withOpacity(0.1), BlendMode.lighten),
-    'Lark': ui.ColorFilter.mode(Colors.blue.withOpacity(0.1), BlendMode.lighten),
-    'Ludwig': ui.ColorFilter.mode(Colors.white.withOpacity(0.2), BlendMode.darken),
-    'Nashville': ui.ColorFilter.mode(Colors.orange.withOpacity(0.15), BlendMode.lighten),
-    'Perpetua': ui.ColorFilter.mode(Colors.pink.withOpacity(0.1), BlendMode.lighten),
-    'Reyes': ui.ColorFilter.mode(Colors.yellow.withOpacity(0.05), BlendMode.lighten),
-    'Slumber': ui.ColorFilter.mode(Colors.purple.withOpacity(0.1), BlendMode.lighten),
-    'Toaster': ui.ColorFilter.mode(Colors.red.withOpacity(0.2), BlendMode.lighten),
-    'Valencia': ui.ColorFilter.mode(Colors.amber.withOpacity(0.15), BlendMode.lighten),
-    'Walden': ui.ColorFilter.mode(Colors.green.withOpacity(0.15), BlendMode.lighten),
-    'Willow': ui.ColorFilter.mode(Colors.teal.withOpacity(0.15), BlendMode.lighten),
-    'X-Pro II': ui.ColorFilter.mode(Colors.red.withOpacity(0.15), BlendMode.lighten),
-    'Lo-Fi': ui.ColorFilter.mode(Colors.brown.withOpacity(0.15), BlendMode.lighten),
-    'Hudson': ui.ColorFilter.mode(Colors.indigo.withOpacity(0.1), BlendMode.lighten),
-    'Inkwell': ui.ColorFilter.mode(Colors.grey.withOpacity(0.5), BlendMode.saturation),
-    'Amaro': ui.ColorFilter.mode(Colors.amber.withOpacity(0.1), BlendMode.lighten),
-    'Rise': ui.ColorFilter.mode(Colors.yellow.withOpacity(0.08), BlendMode.lighten),
-    'Hefe': ui.ColorFilter.mode(Colors.orange.withOpacity(0.1), BlendMode.lighten),
-    'Sutro': ui.ColorFilter.mode(Colors.orange.withOpacity(0.12), BlendMode.lighten),
-    'Brannan': ui.ColorFilter.mode(Colors.red.withOpacity(0.12), BlendMode.lighten),
-    'Earlybird': ui.ColorFilter.mode(Colors.orange.withOpacity(0.15), BlendMode.lighten),
-  };
-
-  final List<String> filters = [
-    'None', 'Clarendon', 'Gingham', 'Juno', 'Lark', 'Ludwig', 'Nashville', 'Perpetua',
-    'Reyes', 'Slumber', 'Toaster', 'Valencia', 'Walden', 'Willow', 'X-Pro II', 'Lo-Fi',
-    'Hudson', 'Inkwell', 'Amaro', 'Rise', 'Hefe', 'Sutro', 'Brannan', 'Earlybird'
-  ];
+  late EditHistory _editHistory;
+  double _brightness = 0.0;
+  double _contrast = 0.0;
+  double _saturation = 0.0;
+  double _warmth = 0.0;
+  double _vignette = 0.0;
+  double _grain = 0.0;
+  double _sharpness = 0.0;
+  String? _activeFilter;
+  String _editorMode = 'adjust'; // 'adjust', 'crop', 'compare', 'filter'
+  bool _showBeforeAfter = false;
+  Rect? _cropRect;
+  final GamificationService _gamification = GamificationService();
 
   @override
   void initState() {
     super.initState();
-    previousLevel = widget.gamification.stats.level;
-    for (int i = 0; i < widget.imageUrls.length; i++) {
-      selectedFilters[i] = 'None';
-      filterIntensity[i] = 1.0;
-      brightness[i] = 0.0;
-      contrast[i] = 1.0;
-      saturation[i] = 1.0;
+    _editHistory = EditHistory();
+  }
+
+  String _buildFilterCSS() {
+    List<String> filters = [];
+    if (_brightness != 0) filters.add('brightness(${(1 + _brightness * 0.5).toStringAsFixed(2)})');
+    if (_contrast != 0) filters.add('contrast(${(1 + _contrast * 0.5).toStringAsFixed(2)})');
+    if (_saturation != 0) filters.add('saturate(${(1 + _saturation * 0.5).toStringAsFixed(2)})');
+    if (_warmth != 0) filters.add('sepia(${(_warmth * 0.3).abs().toStringAsFixed(2)})');
+    if (_vignette != 0) filters.add('drop-shadow(0 0 ${(_vignette * 20).toStringAsFixed(0)}px rgba(0,0,0,0.5))');
+    if (_grain != 0) filters.add('contrast(${(1 + _grain * 0.2).toStringAsFixed(2)})');
+    if (_sharpness != 0) filters.add('contrast(${(1 + _sharpness * 0.3).toStringAsFixed(2)})');
+    if (_activeFilter != null && _activeFilter != 'Original') {
+      final filter = instagramFilters.firstWhere((f) => f.name == _activeFilter, orElse: () => instagramFilters[0]);
+      return filter.cssFilter;
+    }
+    return filters.isEmpty ? 'none' : filters.join(' ');
+  }
+
+  void _applyFilter(String filterName) {
+    setState(() {
+      _activeFilter = filterName;
+      if (filterName == 'Original') {
+        _brightness = _contrast = _saturation = _warmth = _vignette = _grain = _sharpness = 0.0;
+      }
+      _editHistory.pushState(EditState(
+        brightness: _brightness,
+        contrast: _contrast,
+        saturation: _saturation,
+        warmth: _warmth,
+        vignette: _vignette,
+        grain: _grain,
+        sharpness: _sharpness,
+        activeFilter: _activeFilter,
+        cropRect: _cropRect,
+      ));
+    });
+  }
+
+  void _undo() {
+    final state = _editHistory.undo();
+    if (state != null) {
+      setState(() {
+        _brightness = state.brightness;
+        _contrast = state.contrast;
+        _saturation = state.saturation;
+        _warmth = state.warmth;
+        _vignette = state.vignette;
+        _grain = state.grain;
+        _sharpness = state.sharpness;
+        _activeFilter = state.activeFilter;
+        _cropRect = state.cropRect;
+      });
     }
   }
 
-  void selectFilter(String filter) {
-    setState(() => selectedFilters[currentIndex] = filter);
-    _recordEditAction();
-  }
-
-  void updateIntensity(double intensity) {
-    setState(() => filterIntensity[currentIndex] = intensity);
-  }
-
-  void _recordEditAction() {
-    final newAchievements = widget.gamification.recordEdit();
-    final newLevel = widget.gamification.stats.level;
-    
-    // Check for level up
-    if (newLevel > previousLevel) {
-      previousLevel = newLevel;
-      LevelUpAnimation.show(context, newLevel);
+  void _redo() {
+    final state = _editHistory.redo();
+    if (state != null) {
+      setState(() {
+        _brightness = state.brightness;
+        _contrast = state.contrast;
+        _saturation = state.saturation;
+        _warmth = state.warmth;
+        _vignette = state.vignette;
+        _grain = state.grain;
+        _sharpness = state.sharpness;
+        _activeFilter = state.activeFilter;
+        _cropRect = state.cropRect;
+      });
     }
-    
-    // Show achievement notifications
-    for (final achievement in newAchievements) {
-      AchievementNotification.show(context, achievement);
-    }
-    
-    widget.onEditComplete();
   }
 
-  void downloadImage() {
-    final filter = selectedFilters[currentIndex] ?? 'None';
-    final intensity = filterIntensity[currentIndex] ?? 1.0;
-    final link = html.AnchorElement(href: widget.imageUrls[currentIndex])
-      ..setAttribute('download', 'photo_${currentIndex + 1}_${filter}_${(intensity * 100).toStringAsFixed(0)}pct.jpg')
-      ..click();
-    _recordEditAction();
-  }
-
-  void showFilterModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) => Container(
-        height: MediaQuery.of(context).size.height * 0.5,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1A1F3A), Color(0xFF0A0E27)],
-          ),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              margin: EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white30,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('🎨 Select Filter', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.close, color: Colors.white70),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 0.75,
-                ),
-                itemCount: filters.length,
-                itemBuilder: (ctx, i) => GestureDetector(
-                  onTap: () {
-                    selectFilter(filters[i]);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: selectedFilters[currentIndex] == filters[i]
-                            ? Color(0xFFFCAF45)
-                            : Colors.white24,
-                        width: selectedFilters[currentIndex] == filters[i] ? 3 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: selectedFilters[currentIndex] == filters[i]
-                          ? LinearGradient(colors: [Color(0xFF833AB4).withOpacity(0.3), Color(0xFFFD1D1D).withOpacity(0.3)])
-                          : null,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: SizedBox(
-                            width: 50,
-                            height: 50,
-                            child: ColorFiltered(
-                              colorFilter: filterMatrix[filters[i]] ?? ui.ColorFilter.linearToSrgbGamma(),
-                              child: Image.network(
-                                widget.imageUrls[currentIndex],
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  color: Colors.grey[800],
-                                  child: Icon(Icons.image, color: Colors.white54, size: 20),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 6),
-                        Text(
-                          filters[i],
-                          style: TextStyle(fontSize: 10, color: selectedFilters[currentIndex] == filters[i] ? Color(0xFFFCAF45) : Colors.white70),
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+  void _recordEdit() {
+    _gamification.recordEdit();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Edit recorded! +10 XP'), duration: Duration(seconds: 1)),
     );
   }
 
-  void showAdjustModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.55,
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context);
+        return false;
+      },
+      child: Scaffold(
+        body: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF1A1F3A), Color(0xFF0A0E27)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF1a1a2e), Color(0xFF16213e)],
             ),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             children: [
-              Container(
-                margin: EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white30,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('⚙️ Adjustments', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(Icons.close, color: Colors.white70),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    children: [
-                      // Brightness
-                      _buildAdjustmentSlider(
-                        icon: Icons.brightness_6,
-                        label: 'Brightness',
-                        value: brightness[currentIndex] ?? 0.0,
-                        min: -100,
-                        max: 100,
-                        displayValue: '${(brightness[currentIndex] ?? 0).toStringAsFixed(0)}',
-                        onChanged: (value) {
-                          setState(() => brightness[currentIndex] = value);
-                          setModalState(() {});
-                        },
-                      ),
-                      SizedBox(height: 20),
-                      // Contrast
-                      _buildAdjustmentSlider(
-                        icon: Icons.contrast,
-                        label: 'Contrast',
-                        value: contrast[currentIndex] ?? 1.0,
-                        min: 0.5,
-                        max: 2.0,
-                        displayValue: '${((contrast[currentIndex] ?? 1.0) * 100).toStringAsFixed(0)}%',
-                        onChanged: (value) {
-                          setState(() => contrast[currentIndex] = value);
-                          setModalState(() {});
-                        },
-                      ),
-                      SizedBox(height: 20),
-                      // Saturation
-                      _buildAdjustmentSlider(
-                        icon: Icons.color_lens,
-                        label: 'Saturation',
-                        value: saturation[currentIndex] ?? 1.0,
-                        min: 0.0,
-                        max: 2.0,
-                        displayValue: '${((saturation[currentIndex] ?? 1.0) * 100).toStringAsFixed(0)}%',
-                        onChanged: (value) {
-                          setState(() => saturation[currentIndex] = value);
-                          setModalState(() {});
-                        },
-                      ),
-                      SizedBox(height: 32),
-                      // Reset Button
-                      Container(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              brightness[currentIndex] = 0.0;
-                              contrast[currentIndex] = 1.0;
-                              saturation[currentIndex] = 1.0;
-                            });
-                            setModalState(() {});
-                            _recordEditAction();
-                          },
-                          icon: Icon(Icons.refresh),
-                          label: Text('Reset All'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF2D3561),
-                            padding: EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-              ),
+              _buildToolbar(),
+              Expanded(child: _buildEditorContent()),
+              _buildControlPanel(),
             ],
           ),
         ),
@@ -1042,280 +1262,184 @@ class _EditorPageState extends State<EditorPage> {
     );
   }
 
-  Widget _buildAdjustmentSlider({
-    required IconData icon,
-    required String label,
-    required double value,
-    required double min,
-    required double max,
-    required String displayValue,
-    required ValueChanged<double> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 20, color: Color(0xFFFCAF45)),
-            SizedBox(width: 8),
-            Text(label, style: TextStyle(fontWeight: FontWeight.w500)),
-            Spacer(),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: Color(0xFF833AB4).withOpacity(0.3),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(displayValue, style: TextStyle(fontSize: 12, color: Color(0xFFFCAF45))),
-            ),
-          ],
-        ),
-        SizedBox(height: 8),
-        SliderTheme(
-          data: SliderThemeData(
-            activeTrackColor: Color(0xFFFCAF45),
-            inactiveTrackColor: Colors.white24,
-            thumbColor: Color(0xFFFCAF45),
-            overlayColor: Color(0xFFFCAF45).withOpacity(0.2),
-            trackHeight: 4,
-          ),
-          child: Slider(
-            value: value,
-            min: min,
-            max: max,
-            onChanged: onChanged,
-            onChangeEnd: (_) => _recordEditAction(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Build color matrix for adjustments
-  ui.ColorFilter _buildAdjustmentFilter() {
-    final b = (brightness[currentIndex] ?? 0.0) / 100;
-    final c = contrast[currentIndex] ?? 1.0;
-    final s = saturation[currentIndex] ?? 1.0;
-    
-    // Simplified brightness adjustment using color blend
-    if (b > 0) {
-      return ui.ColorFilter.mode(
-        Colors.white.withOpacity(b.abs() * 0.3),
-        BlendMode.lighten,
-      );
-    } else if (b < 0) {
-      return ui.ColorFilter.mode(
-        Colors.black.withOpacity(b.abs() * 0.3),
-        BlendMode.darken,
-      );
-    }
-    return ui.ColorFilter.linearToSrgbGamma();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final currentFilter = selectedFilters[currentIndex] ?? 'None';
-    final currentIntensity = filterIntensity[currentIndex] ?? 1.0;
-
-    return Scaffold(
-      backgroundColor: Color(0xFF0A0E27),
-      appBar: AppBar(
-        backgroundColor: Color(0xFF1A1F3A),
-        elevation: 0,
-        title: Row(
-          children: [
-            Text('Edit Photo ${currentIndex + 1}/${widget.imageUrls.length}'),
-            Spacer(),
-            XPBarWidget(gamification: widget.gamification),
-          ],
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+  Widget _buildToolbar() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey[800]!, width: 1)),
+        color: Colors.black26,
       ),
-      body: Column(
+      child: Row(
         children: [
-          // Image Preview
-          Expanded(
-            child: Container(
-              margin: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(color: Color(0xFF833AB4).withOpacity(0.3), blurRadius: 20),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Base image with filter
-                    Opacity(
-                      opacity: currentIntensity,
-                      child: ColorFiltered(
-                        colorFilter: filterMatrix[currentFilter] ?? ui.ColorFilter.linearToSrgbGamma(),
-                        child: ColorFiltered(
-                          colorFilter: _buildAdjustmentFilter(),
-                          child: Image.network(
-                            widget.imageUrls[currentIndex],
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Filter name overlay
-                    Positioned(
-                      bottom: 16,
-                      left: 16,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          currentFilter,
-                          style: TextStyle(fontSize: 12, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
           ),
-          // Intensity Slider
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              children: [
-                Icon(Icons.opacity, size: 20, color: Color(0xFFFCAF45)),
-                SizedBox(width: 8),
-                Text('Intensity', style: TextStyle(fontSize: 14)),
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderThemeData(
-                      activeTrackColor: Color(0xFFFCAF45),
-                      inactiveTrackColor: Colors.white24,
-                      thumbColor: Color(0xFFFCAF45),
-                      trackHeight: 4,
-                    ),
-                    child: Slider(
-                      value: currentIntensity,
-                      min: 0.0,
-                      max: 1.0,
-                      onChanged: updateIntensity,
-                    ),
-                  ),
+          Spacer(),
+          Row(
+            children: [
+              if (_editHistory.canUndo)
+                IconButton(
+                  icon: Icon(Icons.undo),
+                  color: Colors.white70,
+                  onPressed: _undo,
                 ),
-                Text('${(currentIntensity * 100).toStringAsFixed(0)}%', style: TextStyle(color: Color(0xFFFCAF45))),
-              ],
-            ),
-          ),
-          // Action Buttons
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF1A1F3A), Color(0xFF0A0E27)],
+              if (_editHistory.canRedo)
+                IconButton(
+                  icon: Icon(Icons.redo),
+                  color: Colors.white70,
+                  onPressed: _redo,
+                ),
+              IconButton(
+                icon: Icon(Icons.download),
+                onPressed: _recordEdit,
               ),
-            ),
-            child: Column(
-              children: [
-                // Main action buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildActionButton(
-                      icon: Icons.filter_vintage,
-                      label: 'Filters',
-                      color: Color(0xFFFCAF45),
-                      onTap: showFilterModal,
-                    ),
-                    _buildActionButton(
-                      icon: Icons.tune,
-                      label: 'Adjust',
-                      color: Color(0xFF833AB4),
-                      onTap: showAdjustModal,
-                    ),
-                    _buildActionButton(
-                      icon: Icons.download,
-                      label: 'Save',
-                      color: Color(0xFF4CAF50),
-                      onTap: downloadImage,
-                    ),
-                  ],
-                ),
-                SizedBox(height: 16),
-                // Navigation buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (widget.imageUrls.length > 1) ...[
-                      IconButton(
-                        onPressed: currentIndex > 0 ? () => setState(() => currentIndex--) : null,
-                        icon: Icon(Icons.chevron_left, size: 32),
-                        color: currentIndex > 0 ? Colors.white : Colors.white30,
-                      ),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Color(0xFF2D3561),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${currentIndex + 1} / ${widget.imageUrls.length}',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: currentIndex < widget.imageUrls.length - 1
-                            ? () => setState(() => currentIndex++)
-                            : null,
-                        icon: Icon(Icons.chevron_right, size: 32),
-                        color: currentIndex < widget.imageUrls.length - 1 ? Colors.white : Colors.white30,
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
+  Widget _buildEditorContent() {
+    final filterCSS = _buildFilterCSS();
+    return Padding(
+      padding: EdgeInsets.all(16),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [color.withOpacity(0.8), color],
-          ),
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(color: color.withOpacity(0.4), blurRadius: 8, offset: Offset(0, 4)),
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: _editorMode == 'crop' 
+            ? CropOverlayWidget(
+                imageWidth: 500,
+                imageHeight: 500,
+                onCropChanged: (rect) => setState(() => _cropRect = rect),
+                initialCrop: _cropRect,
+              )
+            : HtmlElementView(
+                viewType: 'image-editor-${widget.imageUrl.hashCode}',
+              ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildControlPanel() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: Colors.grey[800]!, width: 1)),
+        color: Colors.black26,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildModeSelector(),
+          _buildAdjustmentControls(),
+          _buildFilterCarousel(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeSelector() {
+    return Padding(
+      padding: EdgeInsets.all(12),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildModeButton('Adjust', 'adjust'),
+            _buildModeButton('Crop', 'crop'),
+            _buildModeButton('Filters', 'filter'),
+            _buildModeButton('Compare', 'compare'),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white, size: 24),
-            SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-          ],
+      ),
+    );
+  }
+
+  Widget _buildModeButton(String label, String mode) {
+    final isActive = _editorMode == mode;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4),
+      child: ElevatedButton(
+        onPressed: () => setState(() => _editorMode = mode),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isActive ? Color(0xFF833AB4) : Colors.grey[800],
+        ),
+        child: Text(label),
+      ),
+    );
+  }
+
+  Widget _buildAdjustmentControls() {
+    if (_editorMode != 'adjust') return SizedBox.shrink();
+    return Container(
+      padding: EdgeInsets.all(12),
+      child: Column(
+        children: [
+          _buildSlider('Brightness', _brightness, (v) => setState(() => _brightness = v)),
+          _buildSlider('Contrast', _contrast, (v) => setState(() => _contrast = v)),
+          _buildSlider('Saturation', _saturation, (v) => setState(() => _saturation = v)),
+          _buildSlider('Warmth', _warmth, (v) => setState(() => _warmth = v)),
+          _buildSlider('Vignette', _vignette, (v) => setState(() => _vignette = v)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSlider(String label, double value, Function(double) onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey)),
+        Slider(
+          value: value,
+          min: -1.0,
+          max: 1.0,
+          activeColor: Color(0xFF833AB4),
+          inactiveColor: Colors.grey[800],
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterCarousel() {
+    if (_editorMode != 'filter') return SizedBox.shrink();
+    return Container(
+      padding: EdgeInsets.all(12),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: instagramFilters.map((filter) {
+            final isActive = _activeFilter == filter.name;
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4),
+              child: GestureDetector(
+                onTap: () => _applyFilter(filter.name),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: isActive ? Color(0xFF833AB4) : Colors.grey[800],
+                    border: isActive ? Border.all(color: Color(0xFFFD1D1D), width: 2) : null,
+                  ),
+                  child: Text(
+                    filter.name,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ),
     );
