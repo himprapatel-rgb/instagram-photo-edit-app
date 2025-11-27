@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+
+## [0.6.0] - 2025-11-27
+
+### 🎉 Major Release: Complete Gamification UI Integration
+
+### Added
+- **XP Bar Widget** - Level badge with Instagram gradient, progress bar, XP counter
+- **Streak Widget** - Fire/ice indicators (🔥/❄️), day counter with glow effects
+- **Achievement Notification System** - Animated popups with scale/fade effects
+- **Level-Up Animations** - Celebration dialog with confetti-style effects
+- **Daily Challenge Card** - Progress tracking, XP rewards, rotating challenges
+- **GamificationService** - Complete XP, levels, streaks, achievements backend
+- **8 Achievements** - First Steps, Getting Started, Photo Enthusiast, Master Editor, On Fire, Week Warrior, Rising Star, Photo Legend
+- **15 Level System** - Beginner to Master progression tiers
+
+### Enhanced
+- **Filter Modal** - Improved with actual image thumbnail previews
+- **Adjustment Sliders** - Styled with gradient themes, value displays
+- **Editor UI** - Dark gradient backgrounds, action button styling
+- **Home Page** - Integrated XP bar, streak widget, daily challenge
+- **Action Buttons** - Gradient styling with glow effects
+
+### Technical
+- Lines of Code: 684 → 1,323 (+93%)
+- File Size: 23.5 KB → 46.9 KB
+- New widgets: XPBarWidget, StreakWidget, DailyChallengeCard, AchievementNotification, LevelUpAnimation
+- Commit: `c17c1e9`
+
+### Documentation
+- Updated PROGRESS_TRACKER.md with v0.6.0 release notes
+- Updated README.md with complete feature documentation
+- Added session summary for November 27, 2025
 ## [0.5.0] - 2025-11-26
 
 ### ✨ Added
