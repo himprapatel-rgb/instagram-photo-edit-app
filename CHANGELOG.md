@@ -5,6 +5,54 @@ All notable changes to the Instagram Photo Editor App will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.9.0] - 2025-11-27
+
+### Added - AI Features Release 🤖
+
+#### AI Models
+- **AIAnalysisResult** - Unified result model for AI operations
+- **DetectedObject** - Model for detected objects with bounding boxes
+- **FaceAnalysis** - Model for face analysis with landmarks
+
+#### AI Services
+- **AIAutoEnhanceService** - Intelligent image analysis and enhancement
+  - Analyzes image quality (brightness, contrast, saturation, sharpness)
+  - Provides AI-powered enhancement suggestions
+  - Auto-enhances images based on analysis
+
+- **AIObjectDetectionService** - Object detection in images
+  - Detects common objects (Person, Face, Dog, Cat, Car, Building, etc.)
+  - Returns bounding boxes with confidence scores
+  - Color-coded labels for different object types
+
+- **AIFaceEnhancementService** - Face detection and enhancement
+  - Detects faces in images
+  - Provides face-specific enhancements (smoothing, brightness, sharpness)
+  - Analyzes skin tone and face landmarks
+
+#### AI Widgets
+- **AIAutoEnhanceWidget** - UI for AI auto-enhancement
+  - Analyze button to scan image
+  - Shows confidence score and recommendations
+  - One-click enhancement application
+
+- **AIDetectionWidget** - UI for object and face detection
+  - Combined object and face detection
+  - Shows detection results with counts
+  - Instagram-style gradient design
+
+- **AIFeaturesPanel** - Integrated AI controls panel
+  - Combines all AI features in one UI
+  - Version badge (v0.9.0)
+  - Privacy notice for on-device processing
+
+### Changed
+- Version updated to v0.9.0
+- Overall completion: 88% (↑ from 81%)
+- Phase 5 (AI Features): 95% complete
+- Total LOC: 2,401 lines (↑ from 1,841)
+
 ---
 
 
