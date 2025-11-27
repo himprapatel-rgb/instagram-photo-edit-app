@@ -5,12 +5,11 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-// v1.0.3 - Complete Instagram Photo Editor
-// Fixed: Crop with social media presets, Adjust sliders, AI features, Syntax fix
+// v1.0.4 - Complete Instagram Photo Editor
+// Fixed: Temperature adjustment now works
 
 void main() => runApp(const MyApp());
 
-// ========== CORE CONSTANTS ==========
 class AppColors {
   static const Color purple = Color(0xFF833AB4);
   static const Color pink = Color(0xFFFD1D1D);
@@ -40,7 +39,6 @@ class AppRadius {
   static const double large = 24.0;
 }
 
-// ========== MAIN APP ==========
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
   @override
@@ -55,7 +53,6 @@ class MyApp extends StatelessWidget {
   );
 }
 
-// ========== SPLASH SCREEN ==========
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
   @override
@@ -101,7 +98,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               const SizedBox(height: AppSpacing.lg),
               const Text('Instagram Photo Editor', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
               const SizedBox(height: AppSpacing.sm),
-              Text('v1.0.3', style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.8))),
+              Text('v1.0.4', style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.8))),
               const SizedBox(height: AppSpacing.xxl),
               const SizedBox(width: 30, height: 30, child: CircularProgressIndicator(strokeWidth: 3, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))),
             ],
@@ -112,7 +109,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   );
 }
 
-// ========== HOME SCREEN ==========
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
   @override
@@ -203,7 +199,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildStatItem(String emoji, String value, String label) => Column(children: [Text(emoji, style: const TextStyle(fontSize: 24)), Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)), Text(label, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.7)))]);
 }
 
-// ========== EDITOR SCREEN WITH WORKING ADJUSTMENTS ==========
 class EditorScreen extends StatefulWidget {
   final List<html.File> files;
   const EditorScreen({Key? key, required this.files}) : super(key: key);
@@ -278,11 +273,23 @@ class _EditorScreenState extends State<EditorScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Row(children: const [Icon(Icons.check_circle, color: AppColors.success), SizedBox(width: 8), Text('Image saved!')]), backgroundColor: AppColors.surface));
   }
 
+  // FIXED: Temperature now affects the color matrix
   ColorFilter _getColorFilter() {
     double b = _brightness * 100;
     double c = _contrast;
     double s = _saturation;
-    List<double> matrix = [c * s, 0, 0, 0, b, 0, c * s, 0, 0, b, 0, 0, c * s, 0, b, 0, 0, 0, 1, 0];
+    double t = _temperature * 30; // Temperature adjustment (warm = +red, cool = +blue)
+    
+    // Color matrix with temperature:
+    // Warm (t > 0): adds red/orange tones
+    // Cool (t < 0): adds blue tones
+    List<double> matrix = [
+      c * s, 0, 0, 0, b + t,       // Red channel + temperature
+      0, c * s, 0, 0, b,           // Green channel
+      0, 0, c * s, 0, b - t,       // Blue channel - temperature
+      0, 0, 0, 1, 0,
+    ];
+    
     if (_selectedFilter != null && _selectedFilter != 'Original') {
       matrix = _applyFilterToMatrix(matrix, _selectedFilter!);
     }
@@ -340,7 +347,6 @@ class _EditorScreenState extends State<EditorScreen> {
     Text(label, style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.8)))]));
 }
 
-// ========== CROP MODAL WITH SOCIAL MEDIA PRESETS ==========
 class CropModal extends StatefulWidget {
   final String? imageDataUrl;
   final Function(Map<String, dynamic>) onCropApplied;
@@ -405,7 +411,6 @@ class _CropModalState extends State<CropModal> {
         if (preset['desc'] != null) Text(preset['desc'], style: TextStyle(fontSize: 8, color: Colors.white.withOpacity(0.5)))])));
 }
 
-// ========== FILTER MODAL ==========
 class FilterModal extends StatelessWidget {
   final String? selectedFilter;
   final String? imageDataUrl;
@@ -457,7 +462,6 @@ class FilterModal extends StatelessWidget {
   }
 }
 
-// ========== ADJUSTMENT MODAL ==========
 class AdjustmentModal extends StatefulWidget {
   final double brightness, contrast, saturation, temperature;
   final Function(double, double, double, double) onChanged;
@@ -526,7 +530,6 @@ class _AdjustmentModalState extends State<AdjustmentModal> {
       SliderTheme(data: const SliderThemeData(activeTrackColor: AppColors.pink, inactiveTrackColor: Colors.white24, thumbColor: Colors.white), child: Slider(value: value, min: min, max: max, onChanged: (v) => _updateValue(key, v)))]));
 }
 
-// ========== AI FEATURES PANEL ==========
 class AIFeaturesPanel extends StatefulWidget {
   final Function(double, double, double) onAutoEnhance;
   final Function(List<DetectedObject>) onObjectsDetected;
@@ -566,7 +569,7 @@ class _AIFeaturesPanelState extends State<AIFeaturesPanel> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
         const SizedBox(height: AppSpacing.md),
-        Row(children: [ShaderMask(shaderCallback: (bounds) => AppColors.primaryGradient.createShader(bounds), child: const Icon(Icons.psychology, size: 24, color: Colors.white)), const SizedBox(width: 8), const Text('AI Features', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), const Spacer(), Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(10)), child: const Text('v1.0.3', style: TextStyle(fontSize: 10)))]),
+        Row(children: [ShaderMask(shaderCallback: (bounds) => AppColors.primaryGradient.createShader(bounds), child: const Icon(Icons.psychology, size: 24, color: Colors.white)), const SizedBox(width: 8), const Text('AI Features', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), const Spacer(), Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(10)), child: const Text('v1.0.4', style: TextStyle(fontSize: 10)))]),
         const SizedBox(height: AppSpacing.lg),
         _buildAICard(icon: Icons.auto_awesome, title: 'AI Auto-Enhance', subtitle: 'Automatically improve brightness, contrast & colors', color: AppColors.purple, isLoading: _isEnhancing, onTap: _runAutoEnhance, buttonText: 'Enhance Now'),
         if (_enhanceResult != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_enhanceResult!, style: const TextStyle(fontSize: 12, color: AppColors.success))),
@@ -589,7 +592,6 @@ class _AIFeaturesPanelState extends State<AIFeaturesPanel> {
       isLoading ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(color))) : ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: color, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)), onPressed: onTap, child: Text(buttonText, style: const TextStyle(fontSize: 12)))]));
 }
 
-// ========== MODELS ==========
 class DetectedObject {
   final String label;
   final double confidence;
@@ -604,7 +606,6 @@ class GamificationStats {
   GamificationStats({this.level = 1, this.xp = 0, this.xpToNextLevel = 100, this.streak = 0, this.totalEdits = 0, this.achievements = const []});
 }
 
-// ========== SERVICES ==========
 class GamificationService {
   GamificationStats _stats = GamificationStats();
   GamificationStats get stats => _stats;
@@ -622,7 +623,6 @@ class GamificationService {
   }
 }
 
-// ========== PAINTERS ==========
 class ObjectDetectionPainter extends CustomPainter {
   final List<DetectedObject> objects;
   ObjectDetectionPainter(this.objects);
@@ -642,9 +642,6 @@ class ObjectDetectionPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-// ========== END OF v1.0.3 ==========
-// Fixed: Crop with 9 social media presets
-// Fixed: Adjust sliders now update image in real-time
-// Fixed: AI Auto-Enhance applies visible changes
-// Fixed: Object Detection improved (no false positives)
-// Fixed: Syntax error in FilterModal build method
+// v1.0.4 - Temperature fix applied
+// Warm (+): Adds red/orange tones
+// Cool (-): Adds blue tones
