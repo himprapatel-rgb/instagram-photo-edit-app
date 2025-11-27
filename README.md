@@ -101,6 +101,20 @@ Choose from a curated collection of Instagram-style filters:
 - **Background Removal** - Automatic subject isolation
 - **Style Transfer** - Apply artistic styles
 - **Face Beautification** - Subtle skin smoothing
+- - **AI Object Detection** - Automatically detect people, faces, pets, and objects
+- **AI Face Enhancement** - Smart face detection with skin smoothing and brightness
+- **AI Image Analysis** - Analyze image quality and get enhancement suggestions
+
+#### 🤖 v0.9.0 AI Features
+
+Our latest AI features provide intelligent photo enhancement:
+
+| Feature | Description |
+|---------|-------------|
+| Auto-Enhance | AI analyzes your photo and suggests optimal adjustments |
+| Object Detection | Detects 12+ object types with bounding boxes |
+| Face Detection | Finds faces and applies targeted enhancements |
+| Smart Suggestions | Get personalized editing recommendations |
 
 ### 🎭 Multiple Editing Modes
 
