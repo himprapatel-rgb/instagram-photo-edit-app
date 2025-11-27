@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] - 2025-11-27
+
+### Added
+- **Crop & Resize Functionality**
+  - CropOverlayWidget with visual grid overlay (rule of thirds)
+  - Multiple aspect ratio presets: Free, 1:1, 4:3, 16:9, 9:16
+  - Draggable crop area with boundary constraints
+  - Real-time preview with dimmed outer areas
+  - Corner handles for precise cropping
+
+- **Undo/Redo System**
+  - EditHistory class with stack-based implementation
+  - EditState model tracking all adjustment states
+  - Undo/Redo buttons in editor toolbar
+  - Full state preservation (crops, filters, adjustments)
+  - Unlimited undo/redo depth
+
+- **Before/After Comparison**
+  - BeforeAfterWidget with draggable slider
+  - Split-screen comparison view
+  - Animated slider with circular handle indicator
+  - Labels for original and edited versions
+  - Touch and mouse support
+
+- **Enhanced Gamification**
+  - Expanded achievement system (4 predefined achievements)
+  - DailyChallenge model with progress tracking
+  - Daily challenge generation with rewards (50-100 XP)
+  - XP tracking (+10 XP per edit)
+  - Streak system with longest streak tracking
+
+- **Improved UI/UX**
+  - Multi-mode editor (Adjust, Crop, Filters, Compare)
+  - Enhanced HomePage with gamification widgets
+  - Better filter carousel with active state indicators
+  - Responsive image grid (2-4 columns)
+  - Gradient backgrounds and improved visual hierarchy
+
+- **Filter Presets**
+  - 22 Instagram-inspired filters
+  - Premium filter variants
+  - Real-time CSS filter generation
+
+### Changed
+- Refactored EditorPage with mode-based UI system
+- Improved state management with EditHistory
+- Enhanced filter application system
+- Better accessibility and error handling
+- Updated project progress to 78%
+
+### Technical Details
+- Total Lines of Code: 1,447 (up from 1,323)
+- Code Size: 44.2 KB
+- Phase 2 Progress: 70% (Crop & Resize now 100%)
+- Phase 3 Progress: 95% (Gamification near complete)
+
+---
+
 
 ## [0.6.0] - 2025-11-27
 
