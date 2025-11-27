@@ -87,7 +87,7 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('PRO Editor', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            Text('v2.1.0 \u2022 Professional', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+            Text('v2.1.0 • Professional', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
           ],
         ),
       ],
@@ -191,45 +191,6 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// Edit state for undo/redo
-class EditState {
-  final int filterIndex;
-  final double filterIntensity;
-  final Map<String, double> adjustments;
-  final Map<String, Map<String, double>> hslValues;
-  final String? aiMode;
-  final String cropRatio;
-
-  EditState({
-    required this.filterIndex,
-    required this.filterIntensity,
-    required this.adjustments,
-    required this.hslValues,
-    this.aiMode,
-    required this.cropRatio,
-  });
-
-  EditState copyWith({
-    int? filterIndex,
-    double? filterIntensity,
-    Map<String, double>? adjustments,
-    Map<String, Map<String, double>>? hslValues,
-    String? aiMode,
-    String? cropRatio,
-  }) {
-    return EditState(
-      filterIndex: filterIndex ?? this.filterIndex,
-      filterIntensity: filterIntensity ?? this.filterIntensity,
-      adjustments: adjustments ?? Map.from(this.adjustments),
-      hslValues: hslValues ?? Map.from(this.hslValues),
-      aiMode: aiMode,
-      cropRatio: cropRatio ?? this.cropRatio,
-    );
-  }
-}
-  }
-}
-
 class EditorScreen extends StatefulWidget {
   final String imageData;
   const EditorScreen({super.key, required this.imageData});
@@ -247,9 +208,8 @@ class _EditorScreenState extends State<EditorScreen> {
   String _adjustTab = 'Light';
   String _hslChannel = 'Red';
 
-  // Undo/Redo stacks
-  final List<EditState> _undoStack = [];
-  final List<EditState> _redoStack = [];
+  final List<Map<String, double>> _undoStack = [];
+  final List<Map<String, double>> _redoStack = [];
 
   final Map<String, double> _adjustments = {
     'exposure': 0, 'contrast': 0, 'highlights': 0, 'shadows': 0,
@@ -257,7 +217,6 @@ class _EditorScreenState extends State<EditorScreen> {
     'clarity': 0, 'fade': 0,
   };
 
-  // HSL Color Grading values
   final Map<String, Map<String, double>> _hslValues = {
     'Red': {'hue': 0, 'saturation': 0, 'luminance': 0},
     'Orange': {'hue': 0, 'saturation': 0, 'luminance': 0},
@@ -297,63 +256,28 @@ class _EditorScreenState extends State<EditorScreen> {
   ];
 
   void _saveState() {
-    _undoStack.add(EditState(
-      filterIndex: _selectedFilter,
-      filterIntensity: _filterIntensity,
-      adjustments: Map.from(_adjustments),
-      hslValues: Map.from(_hslValues.map((k, v) => MapEntry(k, Map.from(v)))),
-      aiMode: _appliedAI,
-      cropRatio: _currentCrop ?? 'free',
-    ));
+    _undoStack.add(Map.from(_adjustments));
     _redoStack.clear();
   }
 
   void _undo() {
     if (_undoStack.isEmpty) return;
-    final current = EditState(
-      filterIndex: _selectedFilter,
-      filterIntensity: _filterIntensity,
-      adjustments: Map.from(_adjustments),
-      hslValues: Map.from(_hslValues.map((k, v) => MapEntry(k, Map.from(v)))),
-      aiMode: _appliedAI,
-      cropRatio: _currentCrop ?? 'free',
-    );
-    _redoStack.add(current);
+    _redoStack.add(Map.from(_adjustments));
     final prev = _undoStack.removeLast();
     setState(() {
-      _selectedFilter = prev.filterIndex;
-      _filterIntensity = prev.filterIntensity;
       _adjustments.clear();
-      _adjustments.addAll(prev.adjustments);
-      _hslValues.clear();
-      _hslValues.addAll(prev.hslValues);
-      _appliedAI = prev.aiMode;
-      _currentCrop = prev.cropRatio;
+      _adjustments.addAll(prev);
     });
     _showSnackBar('Undo applied');
   }
 
   void _redo() {
     if (_redoStack.isEmpty) return;
-    final current = EditState(
-      filterIndex: _selectedFilter,
-      filterIntensity: _filterIntensity,
-      adjustments: Map.from(_adjustments),
-      hslValues: Map.from(_hslValues.map((k, v) => MapEntry(k, Map.from(v)))),
-      aiMode: _appliedAI,
-      cropRatio: _currentCrop ?? 'free',
-    );
-    _undoStack.add(current);
+    _undoStack.add(Map.from(_adjustments));
     final next = _redoStack.removeLast();
     setState(() {
-      _selectedFilter = next.filterIndex;
-      _filterIntensity = next.filterIntensity;
       _adjustments.clear();
-      _adjustments.addAll(next.adjustments);
-      _hslValues.clear();
-      _hslValues.addAll(next.hslValues);
-      _appliedAI = next.aiMode;
-      _currentCrop = next.cropRatio;
+      _adjustments.addAll(next);
     });
     _showSnackBar('Redo applied');
   }
@@ -364,28 +288,23 @@ class _EditorScreenState extends State<EditorScreen> {
       final filterMatrix = _filters[_selectedFilter]['matrix'] as List<num>?;
       if (filterMatrix != null) {
         matrix = filterMatrix.map((e) => e.toDouble()).toList();
-        // Apply filter intensity
         for (int i = 0; i < matrix.length; i++) {
-          if (i % 5 == 4) continue; // Skip offset values
+          if (i % 5 == 4) continue;
           final identity = (i % 6 == 0) ? 1.0 : 0.0;
           matrix[i] = identity + (matrix[i] - identity) * _filterIntensity;
         }
       }
     }
-
-    // Apply adjustments
     final e = 1 + _adjustments['exposure']! / 100;
     final c = 1 + _adjustments['contrast']! / 100;
     final s = 1 + _adjustments['saturation']! / 100;
     final t = _adjustments['temperature']! / 100;
-
     final adjustMatrix = [
       e * c * s, 0.0, 0.0, 0.0, t * 30,
       0.0, e * c * s, 0.0, 0.0, -t * 10,
       0.0, 0.0, e * c * s, 0.0, -t * 30,
       0.0, 0.0, 0.0, 1.0, 0.0,
     ];
-
     if (matrix != null) {
       return ColorFilter.matrix(_multiplyMatrices(matrix, adjustMatrix));
     }
@@ -470,17 +389,10 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   Widget _buildImagePreview() {
-    Widget image = Image.network(
-      widget.imageData,
-      fit: BoxFit.contain,
-      filterQuality: FilterQuality.high,
-    );
-
+    Widget image = Image.network(widget.imageData, fit: BoxFit.contain, filterQuality: FilterQuality.high);
     if (_buildColorFilter() != null) {
       image = ColorFiltered(colorFilter: _buildColorFilter()!, child: image);
     }
-
-    // Apply crop aspect ratio
     if (_currentCrop != null && _currentCrop != 'free') {
       double? aspectRatio;
       switch (_currentCrop) {
@@ -495,7 +407,6 @@ class _EditorScreenState extends State<EditorScreen> {
         image = AspectRatio(aspectRatio: aspectRatio, child: ClipRect(child: image));
       }
     }
-
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -505,10 +416,7 @@ class _EditorScreenState extends State<EditorScreen> {
             top: 16,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.teal,
-                borderRadius: BorderRadius.circular(16),
-              ),
+              decoration: BoxDecoration(color: AppColors.teal, borderRadius: BorderRadius.circular(16)),
               child: Text('Crop: $_currentCrop', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
             ),
           ),
@@ -570,34 +478,22 @@ class _EditorScreenState extends State<EditorScreen> {
   Widget _buildFiltersPanel() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      decoration: BoxDecoration(color: AppColors.card, borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2))),
-          ),
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 16),
           const Text('PRO FILTERS', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
           Text('24 cinematic presets', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
           const SizedBox(height: 8),
-          // Filter Intensity Slider
           Row(
             children: [
               const Text('Intensity', style: TextStyle(fontSize: 12)),
               Expanded(
                 child: Slider(
-                  value: _filterIntensity,
-                  min: 0,
-                  max: 1,
-                  activeColor: AppColors.teal,
-                  onChanged: (v) {
-                    _saveState();
-                    setState(() => _filterIntensity = v);
-                  },
+                  value: _filterIntensity, min: 0, max: 1, activeColor: AppColors.teal,
+                  onChanged: (v) { _saveState(); setState(() => _filterIntensity = v); },
                 ),
               ),
               Text('${(_filterIntensity * 100).round()}%', style: const TextStyle(fontSize: 12)),
@@ -605,32 +501,22 @@ class _EditorScreenState extends State<EditorScreen> {
           ),
           const SizedBox(height: 8),
           SizedBox(
-            height: 100,
-            child: GridView.builder(
+            height: 80,
+            child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 1, mainAxisSpacing: 8),
               itemCount: _filters.length,
               itemBuilder: (context, index) {
                 final isSelected = _selectedFilter == index;
                 return GestureDetector(
-                  onTap: () {
-                    _saveState();
-                    setState(() => _selectedFilter = index);
-                    Navigator.pop(context);
-                    _showSnackBar('Filter: ${_filters[index]['name']}');
-                  },
+                  onTap: () { _saveState(); setState(() => _selectedFilter = index); _showSnackBar('Filter: ${_filters[index]['name']}'); },
                   child: Container(
-                    width: 80,
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: isSelected ? Border.all(color: AppColors.teal, width: 2) : null,
-                    ),
+                    width: 70, margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: isSelected ? Border.all(color: AppColors.teal, width: 2) : null),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (isSelected) const Icon(Icons.check, color: AppColors.teal, size: 24),
-                        Text(_filters[index]['name'] as String, style: TextStyle(fontSize: 10, color: isSelected ? AppColors.teal : Colors.grey)),
+                        if (isSelected) const Icon(Icons.check, color: AppColors.teal, size: 20),
+                        Text(_filters[index]['name'] as String, style: TextStyle(fontSize: 9, color: isSelected ? AppColors.teal : Colors.grey), textAlign: TextAlign.center),
                       ],
                     ),
                   ),
@@ -646,10 +532,7 @@ class _EditorScreenState extends State<EditorScreen> {
   Widget _buildAdjustPanel() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      decoration: BoxDecoration(color: AppColors.card, borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
       child: Column(
         children: [
           Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2)))),
@@ -664,18 +547,8 @@ class _EditorScreenState extends State<EditorScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: ElevatedButton(
                   onPressed: () => setState(() => _adjustTab = tab),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isActive ? AppColors.teal : AppColors.surface,
-                    foregroundColor: isActive ? Colors.white : Colors.grey,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(tab == 'Light' ? Icons.wb_sunny : tab == 'Color' ? Icons.palette : Icons.auto_fix_high, size: 16),
-                      const SizedBox(width: 4),
-                      Text(tab),
-                    ],
-                  ),
+                  style: ElevatedButton.styleFrom(backgroundColor: isActive ? AppColors.teal : AppColors.surface, foregroundColor: isActive ? Colors.white : Colors.grey, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+                  child: Text(tab),
                 ),
               );
             }).toList(),
@@ -710,40 +583,21 @@ class _EditorScreenState extends State<EditorScreen> {
               Text(_adjustments[key]!.round().toString(), style: TextStyle(color: AppColors.teal, fontSize: 13)),
             ],
           ),
-          SliderTheme(
-            data: SliderThemeData(trackHeight: 4, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8)),
-            child: Slider(
-              value: _adjustments[key]!,
-              min: -100,
-              max: 100,
-              activeColor: AppColors.teal,
-              inactiveColor: Colors.grey[800],
-              onChanged: (v) {
-                _saveState();
-                setState(() => _adjustments[key] = v);
-              },
-            ),
+          Slider(
+            value: _adjustments[key]!, min: -100, max: 100, activeColor: AppColors.teal, inactiveColor: Colors.grey[800],
+            onChanged: (v) { _saveState(); setState(() => _adjustments[key] = v); },
           ),
         ],
       ),
     );
   }
 
-  // NEW: HSL Color Grading Panel
   Widget _buildHSLPanel() {
     final colors = ['Red', 'Orange', 'Yellow', 'Green', 'Aqua', 'Blue', 'Purple', 'Magenta'];
-    final colorValues = {
-      'Red': Colors.red, 'Orange': Colors.orange, 'Yellow': Colors.yellow,
-      'Green': Colors.green, 'Aqua': Colors.cyan, 'Blue': Colors.blue,
-      'Purple': Colors.purple, 'Magenta': Colors.pink,
-    };
-
+    final colorValues = {'Red': Colors.red, 'Orange': Colors.orange, 'Yellow': Colors.yellow, 'Green': Colors.green, 'Aqua': Colors.cyan, 'Blue': Colors.blue, 'Purple': Colors.purple, 'Magenta': Colors.pink};
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      decoration: BoxDecoration(color: AppColors.card, borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
       child: Column(
         children: [
           Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2)))),
@@ -751,7 +605,6 @@ class _EditorScreenState extends State<EditorScreen> {
           const Text('HSL COLOR GRADING', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
           Text('Professional color control', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
           const SizedBox(height: 16),
-          // Color channel selector
           SizedBox(
             height: 40,
             child: ListView.builder(
@@ -783,7 +636,6 @@ class _EditorScreenState extends State<EditorScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          // HSL sliders for selected channel
           _buildHSLSlider('Hue', -180, 180),
           _buildHSLSlider('Saturation', -100, 100),
           _buildHSLSlider('Luminance', -100, 100),
@@ -802,14 +654,8 @@ class _EditorScreenState extends State<EditorScreen> {
           SizedBox(width: 70, child: Text(type, style: const TextStyle(fontSize: 12))),
           Expanded(
             child: Slider(
-              value: value,
-              min: min,
-              max: max,
-              activeColor: AppColors.teal,
-              onChanged: (v) {
-                _saveState();
-                setState(() => _hslValues[_hslChannel]![key] = v);
-              },
+              value: value, min: min, max: max, activeColor: AppColors.teal,
+              onChanged: (v) { _saveState(); setState(() => _hslValues[_hslChannel]![key] = v); },
             ),
           ),
           SizedBox(width: 40, child: Text(value.round().toString(), style: TextStyle(color: AppColors.teal, fontSize: 12))),
@@ -825,13 +671,9 @@ class _EditorScreenState extends State<EditorScreen> {
       {'id': 'hdr', 'name': 'HDR Effect', 'desc': 'Expand dynamic range', 'icon': Icons.hdr_on, 'color': Colors.orange},
       {'id': 'denoise', 'name': 'Denoise', 'desc': 'Reduce noise & grain', 'icon': Icons.blur_off, 'color': Colors.blue},
     ];
-
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      decoration: BoxDecoration(color: AppColors.card, borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
       child: Column(
         children: [
           Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2)))),
@@ -848,11 +690,7 @@ class _EditorScreenState extends State<EditorScreen> {
   Widget _buildAIOption(Map<String, dynamic> mode) {
     final isApplied = _appliedAI == mode['id'];
     return GestureDetector(
-      onTap: () {
-        _saveState();
-        setState(() => _appliedAI = isApplied ? null : mode['id'] as String);
-        _showSnackBar(isApplied ? 'AI ${mode['name']} removed' : 'AI ${mode['name']} applied!');
-      },
+      onTap: () { _saveState(); setState(() => _appliedAI = isApplied ? null : mode['id'] as String); _showSnackBar(isApplied ? 'AI ${mode['name']} removed' : 'AI ${mode['name']} applied!'); },
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
@@ -896,13 +734,9 @@ class _EditorScreenState extends State<EditorScreen> {
       {'id': '4:3', 'icon': Icons.crop_landscape, 'label': '4:3'},
       {'id': 'circle', 'icon': Icons.circle_outlined, 'label': 'Circle'},
     ];
-
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      decoration: BoxDecoration(color: AppColors.card, borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
       child: Column(
         children: [
           Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[700], borderRadius: BorderRadius.circular(2)))),
@@ -919,11 +753,7 @@ class _EditorScreenState extends State<EditorScreen> {
               final crop = crops[index];
               final isSelected = _currentCrop == crop['id'];
               return GestureDetector(
-                onTap: () {
-                  _saveState();
-                  setState(() => _currentCrop = crop['id'] as String);
-                  _showSnackBar('Crop applied: ${crop['label']}');
-                },
+                onTap: () { _saveState(); setState(() => _currentCrop = crop['id'] as String); _showSnackBar('Crop applied: ${crop['label']}'); },
                 child: Container(
                   decoration: BoxDecoration(
                     color: isSelected ? AppColors.teal.withOpacity(0.2) : AppColors.surface,
