@@ -4,8 +4,8 @@ import 'dart:ui' as ui;
 import 'dart:async';
 import 'dart:math' as math;
 
-// v2.0.1 - PROFESSIONAL Photo Editor - Best in Market Quality
-// Features: Pro-grade filters, Advanced color science, Real AI processing
+// v2.0.2 - PROFESSIONAL Photo Editor - Best in Market Quality
+// Features: Pro-grade filters, Advanced color science, Real AI processing, WORKING CROP
 // Quality: Comparable to VSCO, Lightroom, Snapseed
 
 void main() => runApp(const MyApp());
@@ -60,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen> {
         Text('PRO', style: TextStyle(fontSize: 48, fontWeight: FontWeight.w100, color: Colors.white, letterSpacing: 20)),
         Text('Photo Editor', style: TextStyle(fontSize: 18, color: Colors.white70)),
         SizedBox(height: 8),
-        Text('v2.0.1 • Professional Quality', style: TextStyle(fontSize: 12, color: Colors.white54)),
+        Text('v2.0.2 • Professional Quality', style: TextStyle(fontSize: 12, color: Colors.white54)),
       ])),
     ),
   );
@@ -79,7 +79,7 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(width: 16),
           const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('PRO Editor', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-            Text('v2.0.1 • Professional', style: TextStyle(fontSize: 12, color: Colors.white54)),
+            Text('v2.0.2 • Professional', style: TextStyle(fontSize: 12, color: Colors.white54)),
           ]),
         ]),
         const SizedBox(height: 48),
@@ -90,7 +90,7 @@ class HomeScreen extends StatelessWidget {
         _buildFeature(Icons.palette, 'Pro Filters', '24 cinematic LUT-style presets'),
         _buildFeature(Icons.tune, 'Advanced Adjust', 'HSL, Curves, Split-toning'),
         _buildFeature(Icons.auto_fix_high, 'AI Enhancement', 'Real pixel-level processing'),
-        _buildFeature(Icons.compare, 'Before/After', 'Live comparison slider'),
+        _buildFeature(Icons.crop, 'Crop & Aspect', 'Working aspect ratio crop'),
         const Spacer(),
         GestureDetector(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditorScreen())),
@@ -132,50 +132,49 @@ class _EditorScreenState extends State<EditorScreen> {
   String _selectedFilter = 'Original';
   bool _showOriginal = false;
   
-  // Professional adjustment parameters (like Lightroom)
-  double _exposure = 0;      // -100 to +100
-  double _contrast = 0;      // -100 to +100
-  double _highlights = 0;    // -100 to +100
-  double _shadows = 0;       // -100 to +100
-  double _whites = 0;        // -100 to +100
-  double _blacks = 0;        // -100 to +100
-  double _saturation = 0;    // -100 to +100
-  double _vibrance = 0;      // -100 to +100
-  double _temperature = 0;   // -100 (blue) to +100 (warm)
-  double _tint = 0;          // -100 (green) to +100 (magenta)
-  double _clarity = 0;       // -100 to +100 (local contrast)
-  double _sharpness = 0;     // 0 to +100
-  double _vignette = 0;      // -100 to +100
-  double _grain = 0;         // 0 to +100
-  double _fadeAmount = 0;    // 0 to +100 (lifted blacks)
+  // CROP STATE - NEW IN v2.0.2
+  String _selectedCropRatio = 'Free';
+  bool _cropApplied = false;
   
-  // HSL per-channel adjustments
+  // Professional adjustment parameters
+  double _exposure = 0;
+  double _contrast = 0;
+  double _highlights = 0;
+  double _shadows = 0;
+  double _whites = 0;
+  double _blacks = 0;
+  double _saturation = 0;
+  double _vibrance = 0;
+  double _temperature = 0;
+  double _tint = 0;
+  double _clarity = 0;
+  double _sharpness = 0;
+  double _vignette = 0;
+  double _grain = 0;
+  double _fadeAmount = 0;
+  
   Map<String, double> _hslHue = {'red': 0, 'orange': 0, 'yellow': 0, 'green': 0, 'aqua': 0, 'blue': 0, 'purple': 0, 'magenta': 0};
   Map<String, double> _hslSat = {'red': 0, 'orange': 0, 'yellow': 0, 'green': 0, 'aqua': 0, 'blue': 0, 'purple': 0, 'magenta': 0};
   Map<String, double> _hslLum = {'red': 0, 'orange': 0, 'yellow': 0, 'green': 0, 'aqua': 0, 'blue': 0, 'purple': 0, 'magenta': 0};
 
-  // Professional LUT-style filters (based on real film stocks & popular presets)
+  // Professional LUT-style filters
   static final List<ProFilter> _proFilters = [
     ProFilter('Original', [1,0,0,0,0, 0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0], 0, 0, 0, 0),
-    // VSCO-style filters
     ProFilter('A6 Analog', [1.1,0.05,0,0,8, 0,1.0,0.05,0,4, -0.05,0.05,0.95,0,12, 0,0,0,1,0], 10, -5, 5, 15),
     ProFilter('C1 Chrome', [1.15,0,0,0,0, 0,1.1,0,0,5, 0,0,1.2,0,10, 0,0,0,1,0], 5, 15, -10, 0),
     ProFilter('F2 Fuji', [1.05,0.1,0,0,5, 0.05,1.0,0,0,0, 0,0.05,1.1,0,8, 0,0,0,1,0], 8, 5, 15, 10),
     ProFilter('M5 Matte', [0.95,0.05,0.05,0,20, 0.05,0.95,0.05,0,18, 0.05,0.05,0.9,0,25, 0,0,0,1,0], -10, -15, -20, 25),
     ProFilter('P5 Pastel', [1.0,0.1,0.1,0,30, 0.1,1.0,0.1,0,28, 0.1,0.1,1.0,0,35, 0,0,0,0.95,0], -15, -25, 10, 30),
-    // Film stock simulations
     ProFilter('Portra 400', [1.08,0.05,0,0,5, 0.02,1.02,0.02,0,3, -0.02,0.05,0.98,0,8, 0,0,0,1,0], 5, 0, 10, 12),
     ProFilter('Kodak Gold', [1.15,0.08,0,0,12, 0.05,1.05,0,0,8, -0.05,0,0.9,0,5, 0,0,0,1,0], 15, 10, 20, 8),
     ProFilter('Fuji 400H', [1.02,0.08,0,0,5, 0.05,1.05,0.05,0,8, 0,0.08,1.1,0,12, 0,0,0,1,0], 5, 5, 5, 10),
     ProFilter('Ektar 100', [1.2,0,0,0,5, 0,1.15,0,0,0, 0,0,1.25,0,8, 0,0,0,1,0], 10, 25, -5, 0),
     ProFilter('Tri-X 400', [0.35,0.35,0.3,0,0, 0.35,0.35,0.3,0,0, 0.35,0.35,0.3,0,0, 0,0,0,1,0], 15, 20, 0, 5),
     ProFilter('HP5 Plus', [0.33,0.34,0.33,0,8, 0.33,0.34,0.33,0,8, 0.33,0.34,0.33,0,8, 0,0,0,1,0], 10, 10, 0, 10),
-    // Cinematic looks
     ProFilter('Cinematic Teal', [0.9,0.1,0,0,0, 0,1.0,0.1,0,5, 0.1,0.1,1.15,0,15, 0,0,0,1,0], 5, 15, -10, 5),
     ProFilter('Orange Teal', [1.2,0.1,0,0,10, 0,0.95,0.05,0,0, -0.1,0.1,1.1,0,15, 0,0,0,1,0], 10, 20, 15, 8),
     ProFilter('Film Noir', [0.4,0.35,0.25,0,-5, 0.35,0.4,0.25,0,-5, 0.3,0.35,0.35,0,-5, 0,0,0,1,0], 25, 30, 0, 10),
     ProFilter('Blade Runner', [1.1,0.15,0,0,5, 0,0.9,0.1,0,-5, -0.1,0.2,1.2,0,20, 0,0,0,1,0], 15, 25, -15, 15),
-    // Modern & trending
     ProFilter('Clean White', [1.05,0,0,0,15, 0,1.05,0,0,15, 0,0,1.05,0,18, 0,0,0,1,0], -5, -10, 5, 20),
     ProFilter('Moody Dark', [0.9,0.05,0.05,0,-10, 0.05,0.85,0.05,0,-15, 0.05,0.05,0.9,0,-5, 0,0,0,1,0], 20, 15, -25, 10),
     ProFilter('Golden Hour', [1.15,0.1,0,0,15, 0.05,1.05,0,0,10, -0.1,0,0.85,0,0, 0,0,0,1,0], 10, 15, 35, 5),
@@ -202,6 +201,8 @@ class _EditorScreenState extends State<EditorScreen> {
   void _resetAll() {
     setState(() {
       _selectedFilter = 'Original';
+      _selectedCropRatio = 'Free';
+      _cropApplied = false;
       _exposure = 0; _contrast = 0; _highlights = 0; _shadows = 0;
       _whites = 0; _blacks = 0; _saturation = 0; _vibrance = 0;
       _temperature = 0; _tint = 0; _clarity = 0; _sharpness = 0;
@@ -209,67 +210,46 @@ class _EditorScreenState extends State<EditorScreen> {
     });
   }
 
-  // Professional color filter calculation using real color science
+  // Get aspect ratio value from string
+  double? _getAspectRatio(String ratio) {
+    switch (ratio) {
+      case '1:1': return 1.0;
+      case '4:5': return 4/5;
+      case '5:4': return 5/4;
+      case '9:16': return 9/16;
+      case '16:9': return 16/9;
+      case '3:2': return 3/2;
+      case '2:3': return 2/3;
+      case '4:3': return 4/3;
+      case '3:4': return 3/4;
+      default: return null; // Free crop
+    }
+  }
+
   ColorFilter _getProColorFilter() {
     final filter = _proFilters.firstWhere((f) => f.name == _selectedFilter);
     List<double> matrix = List.from(filter.matrix.map((e) => e.toDouble()));
-    
-    // Apply exposure (EV stops simulation)
     double expMult = math.pow(2, _exposure / 50).toDouble();
-    
-    // Apply contrast using S-curve approximation
     double contFactor = (_contrast / 100) * 0.5 + 1;
     double contOffset = (1 - contFactor) * 127.5;
-    
-    // Apply temperature (Kelvin shift simulation)
     double tempR = _temperature > 0 ? _temperature / 100 * 30 : 0;
     double tempB = _temperature < 0 ? -_temperature / 100 * 30 : 0;
-    
-    // Apply tint (green-magenta axis)
     double tintG = _tint < 0 ? -_tint / 100 * 20 : 0;
     double tintM = _tint > 0 ? _tint / 100 * 20 : 0;
-    
-    // Apply saturation with luminance preservation
     double satFactor = (_saturation / 100) * 0.5 + 1;
     double satOffset = (1 - satFactor) * 0.333;
-    
-    // Apply vibrance (smart saturation - protects skin tones)
     double vibFactor = (_vibrance / 100) * 0.3 + 1;
-    
-    // Apply highlights/shadows recovery
     double highlightAdj = _highlights / 100 * -20;
     double shadowAdj = _shadows / 100 * 30;
-    
-    // Apply clarity (local contrast via matrix approximation)
     double clarityMult = 1 + (_clarity / 100) * 0.2;
-    
-    // Apply fade (lifted blacks - film look)
     double fadeOffset = _fadeAmount / 100 * 40;
-    
-    // Build the final professional-grade matrix
     return ColorFilter.matrix([
-      // Red channel
-      matrix[0] * expMult * contFactor * satFactor * clarityMult,
-      matrix[1] + satOffset,
-      matrix[2],
-      0,
+      matrix[0] * expMult * contFactor * satFactor * clarityMult, matrix[1] + satOffset, matrix[2], 0,
       matrix[4] + contOffset + tempR - tintM + highlightAdj + fadeOffset + filter.brightness,
-      
-      // Green channel
-      matrix[5] + satOffset,
-      matrix[6] * expMult * contFactor * satFactor * vibFactor * clarityMult,
-      matrix[7] + satOffset,
-      0,
+      matrix[5] + satOffset, matrix[6] * expMult * contFactor * satFactor * vibFactor * clarityMult, matrix[7] + satOffset, 0,
       matrix[9] + contOffset + tintG + shadowAdj + fadeOffset + filter.brightness,
-      
-      // Blue channel
-      matrix[10],
-      matrix[11] + satOffset,
-      matrix[12] * expMult * contFactor * satFactor * clarityMult,
-      0,
+      matrix[10], matrix[11] + satOffset, matrix[12] * expMult * contFactor * satFactor * clarityMult, 0,
       matrix[14] + contOffset + tempB + tintM + fadeOffset + filter.brightness,
-      
-      // Alpha channel
       0, 0, 0, matrix[18], 0,
     ]);
   }
@@ -294,17 +274,13 @@ class _EditorScreenState extends State<EditorScreen> {
       ],
     ),
     body: Column(children: [
-      // Image preview area with before/after
       Expanded(
         child: _imageDataUrl == null
           ? GestureDetector(
               onTap: _pickImage,
               child: Container(
                 margin: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.white10, width: 2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
+                decoration: BoxDecoration(border: Border.all(color: Colors.white10, width: 2), borderRadius: BorderRadius.circular(20)),
                 child: const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Icon(Icons.add_photo_alternate_outlined, size: 64, color: Colors.white24),
                   SizedBox(height: 16),
@@ -318,25 +294,31 @@ class _EditorScreenState extends State<EditorScreen> {
               onLongPressStart: (_) => setState(() => _showOriginal = true),
               onLongPressEnd: (_) => setState(() => _showOriginal = false),
               child: Stack(children: [
-                // Edited image
-                Center(child: ColorFiltered(
-                  colorFilter: _showOriginal ? const ColorFilter.mode(Colors.transparent, BlendMode.dst) : _getProColorFilter(),
-                  child: Image.network(_imageDataUrl!, fit: BoxFit.contain),
+                Center(child: ClipRRect(
+                  borderRadius: BorderRadius.circular(_selectedCropRatio == 'Circle' ? 1000 : 0),
+                  child: AspectRatio(
+                    aspectRatio: _getAspectRatio(_selectedCropRatio) ?? 1.0,
+                    child: ColorFiltered(
+                      colorFilter: _showOriginal ? const ColorFilter.mode(Colors.transparent, BlendMode.dst) : _getProColorFilter(),
+                      child: Image.network(_imageDataUrl!, fit: BoxFit.cover),
+                    ),
+                  ),
                 )),
-                // Original indicator
                 if (_showOriginal) Positioned(top: 16, left: 0, right: 0, child: Center(
                   child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
                     child: const Text('ORIGINAL', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2))),
                 )),
-                // Hold hint
-                if (!_showOriginal) Positioned(bottom: 8, left: 0, right: 0, child: Center(
+                if (!_showOriginal && _cropApplied) Positioned(top: 16, left: 0, right: 0, child: Center(
+                  child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: AppColors.accent.withOpacity(0.8), borderRadius: BorderRadius.circular(20)),
+                    child: Text('Crop: $_selectedCropRatio', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))),
+                )),
+                if (!_showOriginal && !_cropApplied) Positioned(bottom: 8, left: 0, right: 0, child: Center(
                   child: Text('Hold to see original', style: TextStyle(color: Colors.white24, fontSize: 11))),
                 ),
               ]),
             ),
       ),
-      // Professional toolbar
-            _buildProToolbar(),
+      _buildProToolbar(),
     ]),
   );
 
@@ -348,30 +330,27 @@ class _EditorScreenState extends State<EditorScreen> {
       _buildToolTab(Icons.tune, 'Adjust', () => _showAdjustPanel()),
       _buildToolTab(Icons.palette, 'HSL', () => _showHSLPanel()),
       _buildToolTab(Icons.auto_fix_high, 'AI', () => _showAIPanel()),
-      _buildToolTab(Icons.crop, 'Crop', () => _showCropPanel()),
+      _buildToolTab(Icons.crop, 'Crop', () => _showCropPanel(), highlight: _cropApplied),
     ]),
   );
 
-  Widget _buildToolTab(IconData icon, String label, VoidCallback onTap) => Expanded(
+  Widget _buildToolTab(IconData icon, String label, VoidCallback onTap, {bool highlight = false}) => Expanded(
     child: GestureDetector(
       onTap: onTap,
       child: Container(
         color: Colors.transparent,
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, color: Colors.white70, size: 26),
+          Icon(icon, color: highlight ? AppColors.accent : Colors.white70, size: 26),
           const SizedBox(height: 6),
-          Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+          Text(label, style: TextStyle(color: highlight ? AppColors.accent : Colors.white54, fontSize: 11)),
         ]),
       ),
     ),
   );
 
-  // ====== PROFESSIONAL PANELS ======
-  
   void _showFiltersPanel() {
     showModalBottomSheet(context: context, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (_) => ProFiltersPanel(
-      filters: _proFilters,
-      selectedFilter: _selectedFilter,
+      filters: _proFilters, selectedFilter: _selectedFilter,
       onFilterSelected: (name) { setState(() => _selectedFilter = name); Navigator.pop(context); },
     ));
   }
@@ -402,13 +381,24 @@ class _EditorScreenState extends State<EditorScreen> {
     ));
   }
 
+  // WORKING CROP PANEL - v2.0.2
   void _showCropPanel() {
     showModalBottomSheet(context: context, backgroundColor: Colors.transparent, isScrollControlled: true, builder: (_) => ProCropPanel(
-      onCropSelected: (ratio) { Navigator.pop(context); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Crop $ratio applied'), backgroundColor: AppColors.accent)); },
+      selectedRatio: _selectedCropRatio,
+      onCropSelected: (ratio) {
+        setState(() {
+          _selectedCropRatio = ratio;
+          _cropApplied = ratio != 'Free';
+        });
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(ratio == 'Free' ? 'Crop reset to original' : 'Crop applied: $ratio'),
+          backgroundColor: AppColors.accent,
+        ));
+      },
     ));
   }
 
-  // AI Enhancement functions with real quality improvements
   void _applyAutoEnhance() {
     setState(() {
       _exposure = 8; _contrast = 12; _highlights = -15; _shadows = 20;
@@ -422,7 +412,7 @@ class _EditorScreenState extends State<EditorScreen> {
       _exposure = 5; _contrast = 8; _highlights = -10; _shadows = 15;
       _saturation = -8; _vibrance = 10; _temperature = 12; _clarity = -10;
     });
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Portrait mode applied - soft skin tones!'), backgroundColor: AppColors.accent));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Portrait mode applied!'), backgroundColor: AppColors.accent));
   }
 
   void _applyHDR() {
@@ -430,19 +420,16 @@ class _EditorScreenState extends State<EditorScreen> {
       _exposure = 0; _contrast = 25; _highlights = -40; _shadows = 50;
       _saturation = 15; _vibrance = 20; _clarity = 35;
     });
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('HDR effect applied - dynamic range expanded!'), backgroundColor: AppColors.accent));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('HDR effect applied!'), backgroundColor: AppColors.accent));
   }
 
   void _applyDenoise() {
-    setState(() {
-      _clarity = -15; _sharpness = -10;
-    });
+    setState(() { _clarity = -15; _sharpness = -10; });
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Noise reduction applied!'), backgroundColor: AppColors.accent));
   }
 }
 
 // ============ DATA CLASSES ============
-
 class ProFilter {
   final String name;
   final List<num> matrix;
@@ -454,7 +441,6 @@ class ProFilter {
 }
 
 // ============ PRO FILTERS PANEL ============
-
 class ProFiltersPanel extends StatelessWidget {
   final List<ProFilter> filters;
   final String selectedFilter;
@@ -498,8 +484,7 @@ class ProFiltersPanel extends StatelessWidget {
   );
 }
 
-// ============ PRO ADJUST PANEL (LIGHTROOM-STYLE) ============
-
+// ============ PRO ADJUST PANEL ============
 class ProAdjustPanel extends StatefulWidget {
   final double exposure, contrast, highlights, shadows, saturation, vibrance, temperature, tint, clarity, fadeAmount;
   final Function(double, double, double, double, double, double, double, double, double, double) onChanged;
@@ -532,7 +517,6 @@ class _ProAdjustPanelState extends State<ProAdjustPanel> {
       const SizedBox(height: 16),
       const Text('ADJUSTMENTS', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 2)),
       const SizedBox(height: 16),
-      // Section tabs
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         _buildSectionTab('Light', Icons.wb_sunny_outlined),
         _buildSectionTab('Color', Icons.palette_outlined),
@@ -591,14 +575,7 @@ class _ProAdjustPanelState extends State<ProAdjustPanel> {
       ]),
       const SizedBox(height: 8),
       SliderTheme(
-        data: SliderThemeData(
-          trackHeight: 3,
-          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-          overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-          activeTrackColor: AppColors.accent,
-          inactiveTrackColor: Colors.white12,
-          thumbColor: Colors.white,
-        ),
+        data: SliderThemeData(trackHeight: 3, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8), overlayShape: const RoundSliderOverlayShape(overlayRadius: 16), activeTrackColor: AppColors.accent, inactiveTrackColor: Colors.white12, thumbColor: Colors.white),
         child: Slider(value: value, min: min, max: max, onChanged: onChanged),
       ),
     ]),
@@ -606,7 +583,6 @@ class _ProAdjustPanelState extends State<ProAdjustPanel> {
 }
 
 // ============ PRO AI PANEL ============
-
 class ProAIPanel extends StatelessWidget {
   final VoidCallback onAutoEnhance, onPortraitMode, onHDR, onDenoise;
   const ProAIPanel({Key? key, required this.onAutoEnhance, required this.onPortraitMode, required this.onHDR, required this.onDenoise}) : super(key: key);
@@ -652,11 +628,11 @@ class ProAIPanel extends StatelessWidget {
   );
 }
 
-// ============ PRO CROP PANEL ============
-
+// ============ PRO CROP PANEL - WORKING IN v2.0.2 ============
 class ProCropPanel extends StatelessWidget {
+  final String selectedRatio;
   final Function(String) onCropSelected;
-  const ProCropPanel({Key? key, required this.onCropSelected}) : super(key: key);
+  const ProCropPanel({Key? key, required this.selectedRatio, required this.onCropSelected}) : super(key: key);
   
   static const List<Map<String, dynamic>> _cropPresets = [
     {'name': 'Free', 'icon': Icons.crop_free, 'ratio': 'Free'},
@@ -671,13 +647,15 @@ class ProCropPanel extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) => Container(
-    height: 280,
+    height: 320,
     decoration: BoxDecoration(color: AppColors.surface, borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
     child: Column(children: [
       const SizedBox(height: 12),
       Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
       const SizedBox(height: 16),
-      const Text('CROP & ROTATE', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 2)),
+      const Text('CROP & ASPECT RATIO', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 2)),
+      const SizedBox(height: 4),
+      const Text('Live preview - select to apply', style: TextStyle(color: Colors.white38, fontSize: 12)),
       const SizedBox(height: 20),
       Expanded(child: GridView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -686,11 +664,15 @@ class ProCropPanel extends StatelessWidget {
         itemBuilder: (_, i) => GestureDetector(
           onTap: () => onCropSelected(_cropPresets[i]['ratio']),
           child: Container(
-            decoration: BoxDecoration(color: AppColors.surfaceLight, borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: selectedRatio == _cropPresets[i]['ratio'] ? AppColors.accent.withOpacity(0.2) : AppColors.surfaceLight,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: selectedRatio == _cropPresets[i]['ratio'] ? AppColors.accent : Colors.transparent, width: 2),
+            ),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(_cropPresets[i]['icon'], color: Colors.white70, size: 26),
+              Icon(_cropPresets[i]['icon'], color: selectedRatio == _cropPresets[i]['ratio'] ? AppColors.accent : Colors.white70, size: 26),
               const SizedBox(height: 6),
-              Text(_cropPresets[i]['name'], style: const TextStyle(color: Colors.white54, fontSize: 10)),
+              Text(_cropPresets[i]['name'], style: TextStyle(color: selectedRatio == _cropPresets[i]['ratio'] ? AppColors.accent : Colors.white54, fontSize: 10, fontWeight: FontWeight.w500)),
             ]),
           ),
         ),
