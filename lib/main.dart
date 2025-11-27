@@ -1,3 +1,16 @@
+// ============================================================================
+// PRO EDITOR v2.1.0 - DESIGN SYSTEM LOCKED
+// ============================================================================
+// GUI Design Reference: /docs/DESIGN_SYSTEM.md
+// 
+// WARNING: DO NOT MODIFY THESE VALUES:
+// - AppColors (lines 13-20)
+// - Button styles and colors
+// - Typography and spacing
+// 
+// For design changes, update DESIGN_SYSTEM.md first and get approval.
+// ============================================================================
+
 import 'package:flutter/material.dart';
 import 'dart:html' as html;
 import 'dart:ui' as ui;
