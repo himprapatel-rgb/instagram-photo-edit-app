@@ -246,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final files = input.files;
       if (files != null && files.isNotEmpty) {
         Navigator.push(context, MaterialPageRoute(
-          builder: (_) => EditorScreen(files: files),
+          builder: (_) => EditorScreen(files: List<html.File>.from(files!)),
         ));
       }
     });
@@ -426,7 +426,7 @@ class _FeatureCard {
 // ========== EDITOR SCREEN (Flow Spec §3.4) ==========
 
 class EditorScreen extends StatefulWidget {
-  final html.FileList files;
+  final List<html.File> files;
   const EditorScreen({Key? key, required this.files}) : super(key: key);
   @override
   State<EditorScreen> createState() => _EditorScreenState();
