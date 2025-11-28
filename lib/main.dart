@@ -370,7 +370,7 @@ class _EditorScreenState extends State<EditorScreen> {
     hslB += magentaHsl['saturation']! / 300;
     hslROffset += magentaHsl['luminance']! / 3;
     hslBOffset += magentaHsl['luminance']! / 3;
-    final adjustMatrix = [
+    var adjustMatrix = [
       e * c * s * hslR, 0.0, 0.0, 0.0, t * 30 + hslROffset,
       0.0, e * c * s * hslG, 0.0, 0.0, -t * 10 + hslGOffset,
       0.0, 0.0, e * c * s * hslB, 0.0, -t * 30 + hslBOffset,
