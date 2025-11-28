@@ -519,7 +519,7 @@ class _EditorScreenState extends State<EditorScreen> {
           ),
           const SizedBox(height: 8),
           SizedBox(
-            height: 80,
+            height: 100,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: _filters.length,
@@ -530,13 +530,25 @@ class _EditorScreenState extends State<EditorScreen> {
                   child: Container(
                     width: 70, margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: isSelected ? Border.all(color: AppColors.teal, width: 2) : null),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (isSelected) const Icon(Icons.check, color: AppColors.teal, size: 20),
-                        Text(_filters[index]['name'] as String, style: TextStyle(fontSize: 9, color: isSelected ? AppColors.teal : Colors.grey), textAlign: TextAlign.center),
-                      ],
-                    ),
+child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: ColorFiltered(
+                            colorFilter: _filters[index]['matrix'] != null
+                              ? ColorFilter.matrix((_filters[index]['matrix'] as List<num>).map((e) => e.toDouble()).toList())
+                              : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
+                            child: Image.network(widget.imageData, fit: BoxFit.cover),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(_filters[index]['name'] as String, style: TextStyle(fontSize: 8, color: isSelected ? AppColors.teal : Colors.grey), textAlign: TextAlign.center),
+                      if (isSelected) Container(height: 2, width: 20, margin: const EdgeInsets.only(top: 2), color: AppColors.teal),
+                    ],
+                  ),
                   ),
                 );
               },
