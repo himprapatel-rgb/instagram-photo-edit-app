@@ -131,6 +131,7 @@ class HomeScreen extends StatelessWidget {
     ];
 
     return ListView.separated(
+            padding: const EdgeInsets.only(bottom: 80),
       itemCount: features.length,
       separatorBuilder: (_, __) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
