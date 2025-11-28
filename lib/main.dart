@@ -344,6 +344,7 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _showSnackBar(String message) {
+        return; // Disable snackbar notifications
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
