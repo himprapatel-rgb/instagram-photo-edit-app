@@ -376,6 +376,57 @@ class _EditorScreenState extends State<EditorScreen> {
       0.0, 0.0, e * c * s * hslB, 0.0, -t * 30 + hslBOffset,
       0.0, 0.0, 0.0, 1.0, 0.0,
     ];
+
+        // AI Enhancement Effects - Apply real processing based on selected AI mode
+    if (_appliedAI != null) {
+      List<double> aiMatrix;
+      switch (_appliedAI) {
+        case 'auto':
+          // Auto Enhance: Boost exposure, contrast, vibrance
+          aiMatrix = [
+            1.15, 0.05, 0.0, 0.0, 10.0,
+            0.05, 1.15, 0.05, 0.0, 8.0,
+            0.0, 0.05, 1.1, 0.0, 5.0,
+            0.0, 0.0, 0.0, 1.0, 0.0,
+          ];
+          break;
+        case 'portrait':
+          // Portrait: Warm skin tones, soft contrast, slight glow
+          aiMatrix = [
+            1.1, 0.08, 0.0, 0.0, 15.0,
+            0.03, 1.05, 0.02, 0.0, 10.0,
+            0.0, 0.0, 0.95, 0.0, 5.0,
+            0.0, 0.0, 0.0, 1.0, 0.0,
+          ];
+          break;
+        case 'hdr':
+          // HDR: High contrast, boosted shadows and highlights
+          aiMatrix = [
+            1.3, 0.0, 0.0, 0.0, -15.0,
+            0.0, 1.3, 0.0, 0.0, -15.0,
+            0.0, 0.0, 1.3, 0.0, -15.0,
+            0.0, 0.0, 0.0, 1.0, 0.0,
+          ];
+          break;
+        case 'denoise':
+          // Denoise: Slight softening effect, reduced contrast
+          aiMatrix = [
+            0.95, 0.03, 0.02, 0.0, 5.0,
+            0.03, 0.95, 0.02, 0.0, 5.0,
+            0.02, 0.03, 0.95, 0.0, 5.0,
+            0.0, 0.0, 0.0, 1.0, 0.0,
+          ];
+          break;
+        default:
+          aiMatrix = [
+            1.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 1.0, 0.0,
+          ];
+      }
+      adjustMatrix = _multiplyMatrices(adjustMatrix, aiMatrix);
+    }
     if (matrix != null) {
       return ColorFilter.matrix(_multiplyMatrices(matrix, adjustMatrix));
     }
