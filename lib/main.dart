@@ -1,5 +1,5 @@
 // ============================================================================
-// PRO EDITOR v2.1.0 - DESIGN SYSTEM LOCKED
+// PRO EDITOR v2.2.0 - DESIGN SYSTEM LOCKED
 // ============================================================================
 // GUI Design Reference: /docs/DESIGN_SYSTEM.md
 // 
@@ -17,7 +17,7 @@ import 'dart:ui' as ui;
 import 'dart:async';
 import 'dart:math' as math;
 
-// v2.1.0 - PROFESSIONAL Photo Editor - Best in Market Quality
+// v2.2.0 - PROFESSIONAL Photo Editor - Best in Market Quality
 // Features: Pro-grade filters, Advanced color science, Real AI processing, HSL Color Grading, Denoise, Undo/Redo
 // Quality: Comparable to VSCO, Lightroom, Snapseed
 
@@ -100,7 +100,7 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('PRO Editor', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            Text('v2.1.0 • Professional', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+            Text('v2.2.0 • Professional', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
           ],
         ),
       ],
@@ -185,6 +185,8 @@ class HomeScreen extends StatelessWidget {
 
   void _pickImage(BuildContext context) {
     final input = html.FileUploadInputElement()..accept = 'image/*';
+        input.style.display = 'none';
+        html.document.body?.append(input);
     input.click();
     input.onChange.listen((e) {
       final file = input.files?.first;
@@ -200,6 +202,7 @@ class HomeScreen extends StatelessWidget {
           );
         });
       }
+          input.remove();
     });
   }
 }
