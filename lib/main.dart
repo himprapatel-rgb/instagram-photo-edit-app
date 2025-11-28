@@ -316,10 +316,64 @@ class _EditorScreenState extends State<EditorScreen> {
     final c = 1 + _adjustments['contrast']! / 100;
     final s = 1 + _adjustments['saturation']! / 100;
     final t = _adjustments['temperature']! / 100;
+
+        // HSL Color Grading - Apply channel-specific adjustments
+    double hslR = 1.0, hslG = 1.0, hslB = 1.0;
+    double hslROffset = 0.0, hslGOffset = 0.0, hslBOffset = 0.0;
+    
+    // Red channel adjustments
+    final redHsl = _hslValues['Red']!;
+    hslR += redHsl['saturation']! / 200;
+    hslROffset += redHsl['luminance']! / 2;
+    
+    // Orange affects Red and Green
+    final orangeHsl = _hslValues['Orange']!;
+    hslR += orangeHsl['saturation']! / 300;
+    hslG += orangeHsl['saturation']! / 400;
+    hslROffset += orangeHsl['luminance']! / 3;
+    hslGOffset += orangeHsl['luminance']! / 4;
+    
+    // Yellow affects Red and Green equally
+    final yellowHsl = _hslValues['Yellow']!;
+    hslR += yellowHsl['saturation']! / 300;
+    hslG += yellowHsl['saturation']! / 300;
+    hslROffset += yellowHsl['luminance']! / 3;
+    hslGOffset += yellowHsl['luminance']! / 3;
+    
+    // Green channel adjustments
+    final greenHsl = _hslValues['Green']!;
+    hslG += greenHsl['saturation']! / 200;
+    hslGOffset += greenHsl['luminance']! / 2;
+    
+    // Aqua affects Green and Blue
+    final aquaHsl = _hslValues['Aqua']!;
+    hslG += aquaHsl['saturation']! / 300;
+    hslB += aquaHsl['saturation']! / 300;
+    hslGOffset += aquaHsl['luminance']! / 3;
+    hslBOffset += aquaHsl['luminance']! / 3;
+    
+    // Blue channel adjustments
+    final blueHsl = _hslValues['Blue']!;
+    hslB += blueHsl['saturation']! / 200;
+    hslBOffset += blueHsl['luminance']! / 2;
+    
+    // Purple affects Red and Blue
+    final purpleHsl = _hslValues['Purple']!;
+    hslR += purpleHsl['saturation']! / 400;
+    hslB += purpleHsl['saturation']! / 300;
+    hslROffset += purpleHsl['luminance']! / 4;
+    hslBOffset += purpleHsl['luminance']! / 3;
+    
+    // Magenta affects Red and Blue equally
+    final magentaHsl = _hslValues['Magenta']!;
+    hslR += magentaHsl['saturation']! / 300;
+    hslB += magentaHsl['saturation']! / 300;
+    hslROffset += magentaHsl['luminance']! / 3;
+    hslBOffset += magentaHsl['luminance']! / 3;
     final adjustMatrix = [
-      e * c * s, 0.0, 0.0, 0.0, t * 30,
-      0.0, e * c * s, 0.0, 0.0, -t * 10,
-      0.0, 0.0, e * c * s, 0.0, -t * 30,
+      e * c * s * hslR, 0.0, 0.0, 0.0, t * 30 + hslROffset,
+      0.0, e * c * s * hslG, 0.0, 0.0, -t * 10 + hslGOffset,
+      0.0, 0.0, e * c * s * hslB, 0.0, -t * 30 + hslBOffset,
       0.0, 0.0, 0.0, 1.0, 0.0,
     ];
     if (matrix != null) {
