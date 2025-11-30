@@ -1,4 +1,5 @@
 // ============================================================================
+// Build trigger for APK/IPA generation
 // PRO EDITOR v2.2.0 - DESIGN SYSTEM LOCKED
 // ============================================================================
 // GUI Design Reference: /docs/DESIGN_SYSTEM.md
