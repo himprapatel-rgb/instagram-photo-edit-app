@@ -16,6 +16,7 @@ dependencies:
 
   # Image Processing
   image: ^4.1.0
+    image_picker: ^1.0.4
 
   # Permissions
   permission_handler: ^11.1.0
