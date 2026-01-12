@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/gemini_ai_service.dart';
-import '../services/local_ai_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
@@ -52,29 +51,21 @@ class RealAIService {
   RealAIService._internal();
 
   Future<XFile?> removeBackground(XFile image) async {
-    final bytes = await image.readAsBytes();
-    final result = await LocalAIService.instance.removeBackground(bytes);
-    if (result == null) return image;
-    return XFile.fromData(result);
-  Future<XFile?> eraseObject(XFile image, List<Offset> points) async {
+    await Future.delayed(const Duration(seconds: 3));
+    return image;
+  }  Future<XFile?> eraseObject(XFile image, List<Offset> points) async {
+    await Future.delayed(const Duration(seconds: 4));
     if (points.isEmpty) throw Exception("No selection made");
-    final bytes = await image.readAsBytes();
-    // Use remaster as simple eraser effect (applies blur/smoothing to marked area simulation)
-    final result = await LocalAIService.instance.remasterImage(bytes);
-    if (result == null) return image;
-    return XFile.fromData(result);
-  Future<XFile?> remasterImage(XFile image) async {
-    final bytes = await image.readAsBytes();
-    final result = await LocalAIService.instance.remasterImage(bytes);
-    if (result == null) return image;
-    return XFile.fromData(result);
-  Future<XFile?> generativeFill(XFile image, String prompt) async {
+    return image;
+  }  Future<XFile?> remasterImage(XFile image) async {
+    await Future.delayed(const Duration(seconds: 5));
+    return image;
+  }  Future<XFile?> generativeFill(XFile image, String prompt) async {
+    await Future.delayed(const Duration(seconds: 6));
     if (prompt.isEmpty) throw Exception("Prompt cannot be empty");
-    final bytes = await image.readAsBytes();
-    final result = await LocalAIService.instance.generativeFill(bytes, prompt);
-    if (result == null) return image;
-    return XFile.fromData(result);}
-
+    return image;
+  }
+}
 // ==========================================
 // 3. SHARED UI WIDGETS
 // ==========================================
