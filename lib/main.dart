@@ -13,7 +13,6 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
-import 'dart:html' as html;
 import 'dart:ui' as ui;
 import 'dart:async';
 import 'dart:math' as math;
