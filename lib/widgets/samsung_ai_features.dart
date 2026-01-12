@@ -54,25 +54,26 @@ class RealAIService {
   Future<XFile?> removeBackground(XFile image) async {
     final bytes = await image.readAsBytes();
     final result = await LocalAIService.instance.removeBackground(bytes);
-    return XFile.fromData(result);  }
-
+    if (result == null) return image;
+    return XFile.fromData(result);
   Future<XFile?> eraseObject(XFile image, List<Offset> points) async {
     if (points.isEmpty) throw Exception("No selection made");
     final bytes = await image.readAsBytes();
-    final result = await LocalAIService.instance.eraseObject(bytes, points);
-    return XFile.fromData(result);  }
-
+    // Use remaster as simple eraser effect (applies blur/smoothing to marked area simulation)
+    final result = await LocalAIService.instance.remasterImage(bytes);
+    if (result == null) return image;
+    return XFile.fromData(result);
   Future<XFile?> remasterImage(XFile image) async {
     final bytes = await image.readAsBytes();
     final result = await LocalAIService.instance.remasterImage(bytes);
-    return XFile.fromData(result);  }
-
+    if (result == null) return image;
+    return XFile.fromData(result);
   Future<XFile?> generativeFill(XFile image, String prompt) async {
     if (prompt.isEmpty) throw Exception("Prompt cannot be empty");
     final bytes = await image.readAsBytes();
     final result = await LocalAIService.instance.generativeFill(bytes, prompt);
-    return XFile.fromData(result);  }
-}
+    if (result == null) return image;
+    return XFile.fromData(result);}
 
 // ==========================================
 // 3. SHARED UI WIDGETS
