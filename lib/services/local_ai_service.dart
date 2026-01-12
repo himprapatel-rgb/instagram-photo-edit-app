@@ -7,9 +7,9 @@ import 'package:image/image.dart' as img;
 /// Uses on-device processing for all AI features
 class LocalAIService {
   static LocalAIService? _instance;
-  
+
   LocalAIService._();
-  
+
   static LocalAIService get instance {
     _instance ??= LocalAIService._();
     return _instance!;
@@ -26,17 +26,17 @@ class LocalAIService {
       final image = img.decodeImage(imageBytes);
       if (image == null) return imageBytes;
 
-      // Auto-adjust brightness and contrast using histogram
+      // STRONGER enhancement - more visible effects
       final adjusted = img.adjustColor(
         image,
-        brightness: 1.1,
-        contrast: 1.15,
-        saturation: 1.2,
+        brightness: 1.3,
+        contrast: 1.4,
+        saturation: 1.5,
       );
-      
 
-      // Return the enhanced image (skip convolution for simplicity)
-      return Uint8List.fromList(img.encodePng(adjusted));    } catch (e) {
+      // Return the enhanced image
+      return Uint8List.fromList(img.encodePng(adjusted));
+    } catch (e) {
       print('Remaster error: \$e');
       return imageBytes;
     }
@@ -53,10 +53,8 @@ class LocalAIService {
       final image = img.decodeImage(imageBytes);
       if (image == null) return imageBytes;
 
-      // Create a simple edge-based mask for background removal
-      // This uses luminance difference to detect foreground
       final result = img.Image(width: image.width, height: image.height);
-      
+
       // Calculate average luminance for threshold
       int totalLum = 0;
       for (int y = 0; y < image.height; y++) {
@@ -66,15 +64,15 @@ class LocalAIService {
         }
       }
       final avgLum = totalLum ~/ (image.width * image.height);
-      
-      // Apply simple foreground detection
+
+      // Apply STRONGER foreground detection (threshold: 50 instead of 30)
       for (int y = 0; y < image.height; y++) {
         for (int x = 0; x < image.width; x++) {
           final pixel = image.getPixel(x, y);
           final lum = img.getLuminance(pixel).toInt();
-          
-          // Keep pixels that are significantly different from average
-          if ((lum - avgLum).abs() > 30) {
+
+          // Keep pixels significantly different from average
+          if ((lum - avgLum).abs() > 50) {
             result.setPixel(x, y, pixel);
           } else {
             // Set to transparent
@@ -104,24 +102,32 @@ class LocalAIService {
       if (image == null) return data['image'];
 
       // Simple inpainting: replace masked areas with average of neighbors
-      if (mask != null) {
-        for (int y = 1; y < image.height - 1; y++) {
-          for (int x = 1; x < image.width - 1; x++) {
+      for (int y = 1; y < image.height - 1; y++) {
+        for (int x = 1; x < image.width - 1; x++) {
+          // Check if this pixel is in the mask area
+          bool isMasked = false;
+          if (mask != null && x < mask.width && y < mask.height) {
             final maskPixel = mask.getPixel(x, y);
-            // If mask pixel is white (area to erase)
-            if (img.getLuminance(maskPixel) > 128) {
-              // Average surrounding pixels
-              int r = 0, g = 0, b = 0, count = 0;
-              for (int dy = -1; dy <= 1; dy++) {
-                for (int dx = -1; dx <= 1; dx++) {
-                  if (dx == 0 && dy == 0) continue;
-                  final neighbor = image.getPixel(x + dx, y + dy);
+            isMasked = img.getLuminance(maskPixel) > 128;
+          }
+
+          if (isMasked) {
+            // Average surrounding pixels
+            int r = 0, g = 0, b = 0, count = 0;
+            for (int dy = -2; dy <= 2; dy++) {
+              for (int dx = -2; dx <= 2; dx++) {
+                final nx = x + dx;
+                final ny = y + dy;
+                if (nx >= 0 && nx < image.width && ny >= 0 && ny < image.height) {
+                  final neighbor = image.getPixel(nx, ny);
                   r += neighbor.r.toInt();
                   g += neighbor.g.toInt();
                   b += neighbor.b.toInt();
                   count++;
                 }
               }
+            }
+            if (count > 0) {
               image.setPixelRgba(x, y, r ~/ count, g ~/ count, b ~/ count, 255);
             }
           }
@@ -135,38 +141,39 @@ class LocalAIService {
     }
   }
 
-  /// GEN FILL: Apply color/pattern fill to masked area
-  /// FREE - Offline capable!
-  Future<Uint8List?> generativeFill(Uint8List imageBytes, String prompt) async {
-    // For truly generative fill, we'd need AI model
-    // This provides a simple color fill based on prompt keywords
-    return compute(_processGenFill, {'image': imageBytes, 'prompt': prompt});
+  /// GEN FILL: Simple pattern-based fill
+  /// FREE - Uses local algorithms!
+  Future<Uint8List?> generativeFill(Uint8List imageBytes, Uint8List? maskBytes, String prompt) async {
+    if (maskBytes == null) return imageBytes;
+    return compute(_processGenFill, {'image': imageBytes, 'mask': maskBytes});
   }
 
-  static Uint8List? _processGenFill(Map<String, dynamic> data) {
+  static Uint8List? _processGenFill(Map<String, Uint8List> data) {
     try {
-      final imageBytes = data['image'] as Uint8List;
-      final prompt = data['prompt'] as String;
-      final image = img.decodeImage(imageBytes);
-      if (image == null) return imageBytes;
+      final image = img.decodeImage(data['image']!);
+      final mask = img.decodeImage(data['mask']!);
+      if (image == null) return data['image'];
 
-      // Simple enhancement based on prompt keywords
-      img.Image result = image;
-      
-      if (prompt.toLowerCase().contains('bright')) {
-        result = img.adjustColor(result, brightness: 1.3);
-      }
-      if (prompt.toLowerCase().contains('warm')) {
-        result = img.colorOffset(result, red: 20, blue: -10);
-      }
-      if (prompt.toLowerCase().contains('cool')) {
-        result = img.colorOffset(result, blue: 20, red: -10);
-      }
-      if (prompt.toLowerCase().contains('vintage')) {
-        result = img.sepia(result);
+      // Gradient fill for masked areas
+      for (int y = 0; y < image.height; y++) {
+        for (int x = 0; x < image.width; x++) {
+          bool isMasked = false;
+          if (mask != null && x < mask.width && y < mask.height) {
+            final maskPixel = mask.getPixel(x, y);
+            isMasked = img.getLuminance(maskPixel) > 128;
+          }
+
+          if (isMasked) {
+            // Create smooth gradient fill based on position
+            final gradientR = ((x / image.width) * 255).toInt();
+            final gradientG = ((y / image.height) * 200).toInt();
+            final gradientB = 180;
+            image.setPixelRgba(x, y, gradientR, gradientG, gradientB, 255);
+          }
+        }
       }
 
-      return Uint8List.fromList(img.encodePng(result));
+      return Uint8List.fromList(img.encodePng(image));
     } catch (e) {
       print('GenFill error: \$e');
       return data['image'];
