@@ -32,9 +32,8 @@ dependencies:
     # AI Services
   google_generative_ai: ^0.4.6
   http: ^1.2.0
-    http_parser: ^4.0.2
-
-      # Local AI (FREE - No API Required)
+  http_parser: ^4.0.2
+        # Local AI (FREE - No API Required)
   google_mlkit_selfie_segmentation: ^0.10.0
   tflite_flutter: ^0.10.4
 
