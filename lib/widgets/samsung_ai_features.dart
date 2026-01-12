@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:typed_data';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -7,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services/gemini_ai_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import '../services/local_ai_service.dart';
 
 // ==========================================
 // 1. THEME & CONSTANTS
@@ -50,28 +54,64 @@ class RealAIService {
   factory RealAIService() => _instance;
   RealAIService._internal();
 
+
+    // Helper: Converts XFile to Uint8List
+  Future<Uint8List> _getBytes(XFile file) async {
+    return await file.readAsBytes();
+  }
+
+  // Helper: Converts Uint8List back to XFile using dart:html Blob
+  XFile _toXFile(Uint8List bytes, String filename) {
+    final blob = html.Blob([bytes]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    return XFile(url, name: filename);
+  }
   Future<XFile?> removeBackground(XFile image) async {
-    await Future.delayed(const Duration(seconds: 3));
-    return image;
-  }  Future<XFile?> eraseObject(XFile image, List<Offset> points) async {
-    await Future.delayed(const Duration(seconds: 4));
+    try {
+      final bytes = await _getBytes(image);
+      final resultBytes = await LocalAIService().removeBackground(bytes);
+      if (resultBytes == null) return null;
+      return _toXFile(resultBytes, 'bg_removed.png');
+    } catch (e) {
+      return image;
+    }
+  }
+
+  Future<XFile?> eraseObject(XFile image, List<Offset> points) async {
     if (points.isEmpty) throw Exception("No selection made");
+    // Note: LocalAIService needs mask-based erasing, using simple delay for now
+    await Future.delayed(const Duration(seconds: 1));
     return image;
-  }  Future<XFile?> remasterImage(XFile image) async {
-    await Future.delayed(const Duration(seconds: 5));
-    return image;
-  }  Future<XFile?> generativeFill(XFile image, String prompt) async {
-    await Future.delayed(const Duration(seconds: 6));
+  }
+
+  Future<XFile?> remasterImage(XFile image) async {
+    try {
+      final bytes = await _getBytes(image);
+      final resultBytes = await LocalAIService().remasterImage(bytes);
+      if (resultBytes == null) return null;
+      return _toXFile(resultBytes, 'remastered.jpg');
+    } catch (e) {
+      return image;
+    }
+  }
+
+  Future<XFile?> generativeFill(XFile image, String prompt) async {
     if (prompt.isEmpty) throw Exception("Prompt cannot be empty");
-    return image;
+    try {
+      final bytes = await _getBytes(image);
+      final resultBytes = await LocalAIService().generativeFill(bytes, prompt);
+      if (resultBytes == null) return null;
+      return _toXFile(resultBytes, 'gen_fill.jpg');
+    } catch (e) {
+      return image;
+    }
   }
 }
 // ==========================================
 // 3. SHARED UI WIDGETS
 // ==========================================
 class AIProcessingOverlay extends StatelessWidget {
-  final bool isProcessing;
-  final String? loadingMessage;
+  final bool isProcessing;  final String? loadingMessage;
   final Widget child;
 
   const AIProcessingOverlay({
