@@ -34,15 +34,9 @@ class LocalAIService {
         saturation: 1.2,
       );
       
-      // Sharpen the image
-      final sharpened = img.convolution(adjusted, [
-        0, -1, 0,
-        -1, 5, -1,
-        0, -1, 0,
-      ]);
 
-      return Uint8List.fromList(img.encodePng(sharpened));
-    } catch (e) {
+      // Return the enhanced image (skip convolution for simplicity)
+      return Uint8List.fromList(img.encodePng(adjusted));    } catch (e) {
       print('Remaster error: \$e');
       return imageBytes;
     }
