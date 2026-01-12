@@ -13,6 +13,7 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:ui' as ui;
 import 'dart:async';
 import 'dart:math' as math;
@@ -184,27 +185,17 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  void _pickImage(BuildContext context) {
-    final input = html.FileUploadInputElement()..accept = 'image/*';
-        input.style.display = 'none';
-        html.document.body?.append(input);
-    input.click();
-    input.onChange.listen((e) {
-      final file = input.files?.first;
-      if (file != null) {
-        final reader = html.FileReader();
-        reader.readAsDataUrl(file);
-        reader.onLoadEnd.listen((e) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => EditorScreen(imageData: reader.result as String),
-            ),
-          );
-        });
-      }
-          input.remove();
-    });
+  void _pickImage(BuildContext context) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EditorScreen(imageData: pickedFile.path),
+        ),
+      );
+    }
   }
 }
 
