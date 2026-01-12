@@ -16,11 +16,12 @@ import 'package:flutter/material.dart';
 import 'dart:html' as html;
 import 'dart:ui' as ui;
 import 'dart:async';
-import 'dart:math' as math;
+import 'dart:math' as math; import 'widgets/galaxy_ai_tools_button.dart';
 
 // v2.2.0 - PROFESSIONAL Photo Editor - Best in Market Quality
 // Features: Pro-grade filters, Advanced color science, Real AI processing, HSL Color Grading, Denoise, Undo/Redo
-// Quality: Comparable to VSCO, Lightroom, Snapseed
+// Quality: Comparable to VSCO, Lig
+htroom, Snapseed
 
 void main() => runApp(const MyApp());
 
@@ -76,6 +77,8 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 40),
               Expanded(child: _buildFeatureList()),
               _buildOpenButton(context),
+                              const SizedBox(height: 16),
+                const GalaxyAiToolsButton(),
             ],
           ),
         ),
