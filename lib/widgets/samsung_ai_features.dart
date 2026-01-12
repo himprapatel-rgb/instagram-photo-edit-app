@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -48,23 +47,23 @@ class RealAIService {
   factory RealAIService() => _instance;
   RealAIService._internal();
 
-  Future<File> removeBackground(File image) async {
+  Future<XFile?> removeBackground(XFile image) async {
     await Future.delayed(const Duration(seconds: 3));
     return image;
   }
 
-  Future<File> eraseObject(File image, List<Offset> points) async {
+  Future<XFile?> eraseObject(XFile image, List<Offset> points) async {
     await Future.delayed(const Duration(seconds: 4));
     if (points.isEmpty) throw Exception("No selection made");
     return image;
   }
 
-  Future<File> remasterImage(File image) async {
+  Future<XFile?> remasterImage(XFile image) async {
     await Future.delayed(const Duration(seconds: 5));
     return image;
   }
 
-  Future<File> generativeFill(File image, String prompt) async {
+  Future<XFile?> generativeFill(XFile image, String prompt) async {
     await Future.delayed(const Duration(seconds: 6));
     if (prompt.isEmpty) throw Exception("Prompt cannot be empty");
     return image;
@@ -178,8 +177,8 @@ class GalaxyAIEditor extends StatefulWidget {
 }
 
 class _GalaxyAIEditorState extends State<GalaxyAIEditor> {
-  File? _selectedImage;
-  File? _processedImage;
+  XFile? _selectedImage;
+  XFile? _processedImage;
   bool _isProcessing = false;
   String _statusMessage = "";
   int _selectedIndex = -1;
@@ -190,7 +189,7 @@ class _GalaxyAIEditorState extends State<GalaxyAIEditor> {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
-        _selectedImage = File(pickedFile.path);
+        _selectedImage = pickedFile;
         _processedImage = null;
         _selectedIndex = -1;
       });
@@ -208,7 +207,7 @@ class _GalaxyAIEditorState extends State<GalaxyAIEditor> {
     );
   }
 
-  void _updateProcessedImage(File result) {
+  void _updateProcessedImage(XFile? result) {
     setState(() {
       _processedImage = result;
       _isProcessing = false;
@@ -251,8 +250,7 @@ class _GalaxyAIEditorState extends State<GalaxyAIEditor> {
                 ),
               ),
             ),
-            if (_selectedImage != null && _selectedIndex != -1)
-              _buildToolControls(),
+            if (_selectedImage != null && _selectedIndex != -1) _buildToolControls(),
             _buildMainToolbar(),
           ],
         ),
@@ -280,7 +278,6 @@ class _GalaxyAIEditorState extends State<GalaxyAIEditor> {
         ),
       );
     }
-
     if (_selectedIndex == 0) {
       return ObjectEraserWidget(
         image: _processedImage ?? _selectedImage!,
@@ -298,18 +295,20 @@ class _GalaxyAIEditorState extends State<GalaxyAIEditor> {
         },
       );
     }
-
     if (_selectedIndex == 2 && _processedImage != null) {
       return BeforeAfterView(
         original: _selectedImage!,
         processed: _processedImage!,
       );
     }
-
-    return Image.file(
-      _processedImage ?? _selectedImage!,
+    final imageToShow = _processedImage ?? _selectedImage!;
+    return Image.network(
+      imageToShow.path,
       fit: BoxFit.contain,
       width: double.infinity,
+      errorBuilder: (context, error, stackTrace) {
+        return const Center(child: Text('Image preview not available', style: TextStyle(color: Colors.white54)));
+      },
     );
   }
 
@@ -401,7 +400,7 @@ class _GalaxyAIEditorState extends State<GalaxyAIEditor> {
 // 5. FEATURE WIDGET: OBJECT ERASER
 // ==========================================
 class ObjectEraserWidget extends StatefulWidget {
-  final File image;
+  final XFile image;
   final Function(List<Offset>) onProcess;
 
   const ObjectEraserWidget({
@@ -422,7 +421,7 @@ class _ObjectEraserWidgetState extends State<ObjectEraserWidget> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.file(widget.image, fit: BoxFit.contain, key: GlobalKey()),
+        Image.network(widget.image.path, fit: BoxFit.contain, key: GlobalKey()),
         GestureDetector(
           onPanUpdate: (details) {
             setState(() {
@@ -474,7 +473,6 @@ class MaskPainter extends CustomPainter {
       ..color = AppTheme.accent.withOpacity(0.5)
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 25.0;
-
     for (int i = 0; i < points.length - 1; i++) {
       if (points[i] != null && points[i + 1] != null) {
         canvas.drawLine(points[i]!, points[i + 1]!, paint);
@@ -490,8 +488,8 @@ class MaskPainter extends CustomPainter {
 // 6. FEATURE WIDGET: BEFORE / AFTER VIEW
 // ==========================================
 class BeforeAfterView extends StatefulWidget {
-  final File original;
-  final File processed;
+  final XFile original;
+  final XFile processed;
 
   const BeforeAfterView({super.key, required this.original, required this.processed});
 
@@ -506,10 +504,10 @@ class _BeforeAfterViewState extends State<BeforeAfterView> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Image.file(widget.original, fit: BoxFit.contain, width: double.infinity, height: double.infinity),
+        Image.network(widget.original.path, fit: BoxFit.contain, width: double.infinity, height: double.infinity),
         ClipRect(
           clipper: RectClipper(_splitPos),
-          child: Image.file(widget.processed, fit: BoxFit.contain, width: double.infinity, height: double.infinity),
+          child: Image.network(widget.processed.path, fit: BoxFit.contain, width: double.infinity, height: double.infinity),
         ),
         LayoutBuilder(
           builder: (context, constraints) {
