@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import '../services/gemini_ai_service.dart';
 
 // ==========================================
 // 1. THEME & CONSTANTS
