@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/gemini_ai_service.dart';
+import '../services/local_ai_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
@@ -51,26 +52,26 @@ class RealAIService {
   RealAIService._internal();
 
   Future<XFile?> removeBackground(XFile image) async {
-    await Future.delayed(const Duration(seconds: 3));
-    return image;
-  }
+    final bytes = await image.readAsBytes();
+    final result = await LocalAIService.instance.removeBackground(bytes);
+    return XFile.fromData(result);  }
 
   Future<XFile?> eraseObject(XFile image, List<Offset> points) async {
-    await Future.delayed(const Duration(seconds: 4));
     if (points.isEmpty) throw Exception("No selection made");
-    return image;
-  }
+    final bytes = await image.readAsBytes();
+    final result = await LocalAIService.instance.eraseObject(bytes, points);
+    return XFile.fromData(result);  }
 
   Future<XFile?> remasterImage(XFile image) async {
-    await Future.delayed(const Duration(seconds: 5));
-    return image;
-  }
+    final bytes = await image.readAsBytes();
+    final result = await LocalAIService.instance.remasterImage(bytes);
+    return XFile.fromData(result);  }
 
   Future<XFile?> generativeFill(XFile image, String prompt) async {
-    await Future.delayed(const Duration(seconds: 6));
     if (prompt.isEmpty) throw Exception("Prompt cannot be empty");
-    return image;
-  }
+    final bytes = await image.readAsBytes();
+    final result = await LocalAIService.instance.generativeFill(bytes, prompt);
+    return XFile.fromData(result);  }
 }
 
 // ==========================================
