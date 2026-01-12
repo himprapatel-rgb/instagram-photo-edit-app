@@ -1,7 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -61,15 +60,15 @@ class RealAIService {
   }
 
   // Helper: Converts Uint8List back to XFile using dart:html Blob
+  // Helper: Converts Uint8List to XFile (Web compatible)
   XFile _toXFile(Uint8List bytes, String filename) {
-    final blob = html.Blob([bytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    return XFile(url, name: filename);
-  }
-  Future<XFile?> removeBackground(XFile image) async {
+    // For web, use base64 data URL
+    final base64 = 'data:image/png;base64,${base64Encode(bytes)}';
+    return XFile(base64, name: filename);
+  }  Future<XFile?> removeBackground(XFile image) async {
     try {
       final bytes = await _getBytes(image);
-      final resultBytes = await LocalAIService().removeBackground(bytes);
+      final resultBytes = await LocalAIService.instance.removeBackground(bytes);
       if (resultBytes == null) return null;
       return _toXFile(resultBytes, 'bg_removed.png');
     } catch (e) {
@@ -87,7 +86,7 @@ class RealAIService {
   Future<XFile?> remasterImage(XFile image) async {
     try {
       final bytes = await _getBytes(image);
-      final resultBytes = await LocalAIService().remasterImage(bytes);
+      final resultBytes = await LocalAIService.instance.remasterImage(bytes);
       if (resultBytes == null) return null;
       return _toXFile(resultBytes, 'remastered.jpg');
     } catch (e) {
@@ -99,7 +98,7 @@ class RealAIService {
     if (prompt.isEmpty) throw Exception("Prompt cannot be empty");
     try {
       final bytes = await _getBytes(image);
-      final resultBytes = await LocalAIService().generativeFill(bytes, prompt);
+      final resultBytes = await LocalAIService.instance.generativeFill(bytes, prompt);
       if (resultBytes == null) return null;
       return _toXFile(resultBytes, 'gen_fill.jpg');
     } catch (e) {
