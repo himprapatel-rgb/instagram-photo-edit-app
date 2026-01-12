@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../core/theme/app_theme.dart';
 import '../core/constants/app_constants.dart';
+import '../widgets/galaxy_ai_tools_button.dart';
 import 'editor_screen.dart';
 import 'gallery_screen.dart';
 
@@ -61,6 +62,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               
               // Features
               _buildFeatures(),
+
+                          // Galaxy AI Tools
+            SliverToBoxAdapter(
+              child: const GalaxyAIToolsButton(),
+            ),
             ],
           ),
         ),
