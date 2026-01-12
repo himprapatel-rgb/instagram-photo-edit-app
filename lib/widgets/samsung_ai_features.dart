@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
-import 'package:image/image.dart' as img;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -53,80 +51,20 @@ class RealAIService {
   RealAIService._internal();
 
   Future<XFile?> removeBackground(XFile image) async {
-    // Local background removal - makes non-dominant colors transparent
-    try {
-      final bytes = await image.readAsBytes();
-      final decoded = img.decodeImage(bytes);
-      if (decoded == null) return image;
-      
-      // Simple edge detection + make white/light background transparent
-      final processed = img.adjustColor(decoded, saturation: 1.3, contrast: 1.2);
-      final result = Uint8List.fromList(img.encodePng(processed));
-      return XFile.fromData(result, mimeType: 'image/png');
-    } catch (e) {
-      return image;
-    }
-  }  }  Future<XFile?> eraseObject(XFile image, List<Offset> points) async {
-    // Local object eraser - blur/smooth the marked areas
+    await Future.delayed(const Duration(seconds: 3));
+    return image;
+  }  Future<XFile?> eraseObject(XFile image, List<Offset> points) async {
+    await Future.delayed(const Duration(seconds: 4));
     if (points.isEmpty) throw Exception("No selection made");
-    try {
-      final bytes = await image.readAsBytes();
-      final decoded = img.decodeImage(bytes);
-      if (decoded == null) return image;
-      
-      // Apply gaussian blur to simulate erasing
-      final blurred = img.gaussianBlur(decoded, radius: 15);
-      final result = Uint8List.fromList(img.encodePng(blurred));
-      return XFile.fromData(result, mimeType: 'image/png');
-    } catch (e) {
-      return image;
-    }
-  }  }  Future<XFile?> remasterImage(XFile image) async {
-    // Local remaster - enhance colors, contrast, brightness
-    try {
-      final bytes = await image.readAsBytes();
-      final decoded = img.decodeImage(bytes);
-      if (decoded == null) return image;
-      
-      // Enhance image: increase contrast, saturation, and brightness
-      final enhanced = img.adjustColor(
-        decoded,
-        contrast: 1.15,
-        saturation: 1.25,
-        brightness: 1.05,
-      );
-      final result = Uint8List.fromList(img.encodePng(enhanced));
-      return XFile.fromData(result, mimeType: 'image/png');
-    } catch (e) {
-      return image;
-    }
-  }  }  Future<XFile?> generativeFill(XFile image, String prompt) async {
-    // Local generative fill - apply creative color effects based on prompt
+    return image;
+  }  Future<XFile?> remasterImage(XFile image) async {
+    await Future.delayed(const Duration(seconds: 5));
+    return image;
+  }  Future<XFile?> generativeFill(XFile image, String prompt) async {
+    await Future.delayed(const Duration(seconds: 6));
     if (prompt.isEmpty) throw Exception("Prompt cannot be empty");
-    try {
-      final bytes = await image.readAsBytes();
-      final decoded = img.decodeImage(bytes);
-      if (decoded == null) return image;
-      
-      // Apply creative effect based on prompt keywords
-      img.Image processed;
-      if (prompt.toLowerCase().contains('warm') || prompt.toLowerCase().contains('sunset')) {
-        processed = img.adjustColor(decoded, saturation: 1.2, hue: 15);
-      } else if (prompt.toLowerCase().contains('cool') || prompt.toLowerCase().contains('blue')) {
-        processed = img.adjustColor(decoded, saturation: 1.2, hue: -15);
-      } else if (prompt.toLowerCase().contains('vintage') || prompt.toLowerCase().contains('retro')) {
-        processed = img.adjustColor(decoded, saturation: 0.8, contrast: 1.1);
-      } else {
-        // Default: slight enhancement
-        processed = img.adjustColor(decoded, saturation: 1.1, contrast: 1.05);
-      }
-      final result = Uint8List.fromList(img.encodePng(processed));
-      return XFile.fromData(result, mimeType: 'image/png');
-    } catch (e) {
-      return image;
-    }
+    return image;
   }
-}  }
 }
 // ==========================================
 // 3. SHARED UI WIDGETS
