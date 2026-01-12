@@ -76,7 +76,7 @@ class HomeScreen extends StatelessWidget {
               Expanded(child: _buildFeatureList()),
               _buildOpenButton(context),
                               const SizedBox(height: 16),
-                GalaxyAiToolsButton(),
+                GalaxyAIToolsButton(),
               ],
           ),
         ),
