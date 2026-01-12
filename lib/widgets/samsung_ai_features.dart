@@ -98,8 +98,8 @@ class RealAIService {
     if (prompt.isEmpty) throw Exception("Prompt cannot be empty");
     try {
       final bytes = await _getBytes(image);
-      final resultBytes = await LocalAIService.instance.generativeFill(bytes, prompt);
-      if (resultBytes == null) return null;
+      final resultBytes = await LocalAIService.instance.generativeFill(bytes, null, prompt);
+            if (resultBytes == null) return null;
       return _toXFile(resultBytes, 'gen_fill.jpg');
     } catch (e) {
       return image;
